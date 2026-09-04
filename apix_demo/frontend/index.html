@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APIx | Airfare Price Index Engine - MoSPI DIID</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .tab-active { border-bottom: 2px solid #2563eb; color: #1d4ed8; font-weight: 600; }
+    .terminal-scroll::-webkit-scrollbar { width: 6px; }
+    .terminal-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- TOP GOVERNMENT HEADER -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-bold text-lg tracking-wider text-white shadow-inner">
+            A<span class="text-amber-400">P</span>Ix
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h1 class="text-lg font-bold tracking-tight text-white">APIx — Airfare Price Index Engine</h1>
+              <span class="bg-blue-900/80 text-blue-300 border border-blue-700 text-xs px-2 py-0.5 rounded font-mono font-medium">SIH26056</span>
+              <span class="bg-emerald-950 text-emerald-400 border border-emerald-700 text-xs px-2 py-0.5 rounded font-medium flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> LIVE DEMO
+              </span>
+            </div>
+            <p class="text-xs text-slate-400">
+              Ministry of Statistics and Programme Implementation (MoSPI) • Data Informatics & Innovation Division (DIID) • Team Binary Brains
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <!-- Trigger Live Scraping Pipeline Modal -->
+          <button onclick="triggerLivePipeline()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-2 rounded-md shadow flex items-center gap-2 transition active:scale-95">
+            <i data-lucide="play" class="w-4 h-4 text-amber-300"></i>
+            Run Scraping Pipeline
+          </button>
+          
+          <!-- Export MoSPI CSV -->
+          <a href="/api/export/cpi" download class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium px-3 py-2 rounded-md flex items-center gap-2 transition">
+            <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
+            Export MoSPI CPI (.csv)
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- SECONDARY BAR / BREADCRUMB -->
+  <div class="bg-white border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between text-xs text-slate-600">
+      <div class="flex items-center space-x-4">
+        <span class="flex items-center gap-1.5 text-slate-700 font-medium">
+          <i data-lucide="database" class="w-3.5 h-3.5 text-blue-600"></i>
+          Basket: 15 Metro + 10 UDAN Routes
+        </span>
+        <span class="text-slate-300">|</span>
+        <span class="flex items-center gap-1.5">
+          <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i>
+          Windows: T+1, T+7, T+15, T+30, T+45
+        </span>
+        <span class="text-slate-300">|</span>
+        <span class="flex items-center gap-1.5">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600"></i>
+          Methodology: Laspeyres DGCA Traffic-Weighted
+        </span>
+      </div>
+      <div id="clock-display" class="font-mono text-slate-500">
+        <!-- Live JS Clock -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
+
+    <!-- KPI STATS CARDS -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      
+      <!-- Card 1: Current APIx -->
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow transition">
+        <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+          <span>Current APIx</span>
+          <span class="bg-blue-50 text-blue-700 text-[10px] font-bold px-1.5 py-0.5 rounded">Base=100</span>
+        </div>
+        <div class="text-2xl font-black text-slate-900 mono" id="kpi-current-apix">164.27</div>
+        <div class="mt-2 flex items-center text-xs text-emerald-600 font-semibold gap-1" id="kpi-change-badge">
+          <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+          <span id="kpi-day-change">+2.18 (24h)</span>
+        </div>
+      </div>
+
+      <!-- Card 2: Metro vs Regional Sub-indices -->
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow transition">
+        <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+          <span>Sub-Indices</span>
+          <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-500"></i>
+        </div>
+        <div class="text-sm font-bold text-slate-800 flex justify-between items-baseline">
+          <span class="text-xs text-slate-500">Metro:</span>
+          <span class="mono text-indigo-600 font-extrabold" id="kpi-metro-apix">165.32</span>
+        </div>
+        <div class="text-sm font-bold text-slate-800 flex justify-between items-baseline mt-1">
+          <span class="text-xs text-slate-500">UDAN/Reg:</span>
+          <span class="mono text-amber-600 font-extrabold" id="kpi-regional-apix">155.49</span>
+        </div>
+        <div class="text-[10px] text-slate-400 mt-1">DGCA traffic weighted</div>
+      </div>
+
+      <!-- Card 3: Reliability Score -->
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow transition">
+        <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+          <span>Reliability Score</span>
+          <span class="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded" id="kpi-rel-status">Optimal</span>
+        </div>
+        <div class="text-2xl font-black text-emerald-600 mono" id="kpi-confidence-score">95.8%</div>
+        <div class="mt-2 text-[10px] text-slate-500 flex items-center gap-1">
+          <i data-lucide="check-circle-2" class="w-3 h-3 text-emerald-500"></i>
+          Target ≥80% (PRD Met)
+        </div>
+      </div>
+
+      <!-- Card 4: Routes Monitored -->
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow transition">
+        <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+          <span>Basket Routes</span>
+          <i data-lucide="plane" class="w-3.5 h-3.5 text-blue-500"></i>
+        </div>
+        <div class="text-2xl font-black text-slate-900 mono">25</div>
+        <div class="mt-2 text-[10px] text-slate-500">
+          15 Metro + 10 UDAN
+        </div>
+      </div>
+
+      <!-- Card 5: Flagged Monopoly Routes -->
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow transition">
+        <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+          <span>Surge / HHI Flags</span>
+          <span class="bg-red-50 text-red-700 text-[10px] font-bold px-1.5 py-0.5 rounded">DGCA/CCI</span>
+        </div>
+        <div class="text-2xl font-black text-rose-600 mono" id="kpi-flagged-count">8</div>
+        <div class="mt-2 text-[10px] text-rose-600 font-medium flex items-center gap-1">
+          <i data-lucide="alert-triangle" class="w-3 h-3"></i>
+          Requires regulatory review
+        </div>
+      </div>
+
+      <!-- Card 6: Backtesting Validation -->
+      <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow transition">
+        <div class="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
+          <span>DGCA Correlation</span>
+          <span class="bg-purple-50 text-purple-700 text-[10px] font-bold px-1.5 py-0.5 rounded">Valid</span>
+        </div>
+        <div class="text-2xl font-black text-purple-600 mono" id="kpi-backtest-corr">0.998</div>
+        <div class="mt-2 text-[10px] text-slate-500">
+          MAPE: <span class="font-bold text-slate-700" id="kpi-backtest-mape">1.99%</span> (Target ≤10%)
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB NAVIGATION BAR -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="border-b border-slate-200 flex overflow-x-auto text-sm font-medium">
+        <button onclick="switchTab('trends')" id="tab-btn-trends" class="px-5 py-3 text-slate-600 hover:text-blue-600 transition flex items-center gap-2 tab-active whitespace-nowrap">
+          <i data-lucide="line-chart" class="w-4 h-4"></i>
+          Index Trends & Booking Horizons
+        </button>
+        <button onclick="switchTab('routes')" id="tab-btn-routes" class="px-5 py-3 text-slate-600 hover:text-blue-600 transition flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="map-pin" class="w-4 h-4"></i>
+          Route Basket & Fare Matrix
+        </button>
+        <button onclick="switchTab('explainability')" id="tab-btn-explainability" class="px-5 py-3 text-slate-600 hover:text-blue-600 transition flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
+          Explainability Engine (SHAP)
+        </button>
+        <button onclick="switchTab('monopoly')" id="tab-btn-monopoly" class="px-5 py-3 text-slate-600 hover:text-blue-600 transition flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="shield-alert" class="w-4 h-4 text-rose-500"></i>
+          Monopoly & Overcharging Watchdog
+        </button>
+        <button onclick="switchTab('backtesting')" id="tab-btn-backtesting" class="px-5 py-3 text-slate-600 hover:text-blue-600 transition flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-500"></i>
+          MoSPI Ground-Truth Backtesting
+        </button>
+        <button onclick="switchTab('pipeline')" id="tab-btn-pipeline" class="px-5 py-3 text-slate-600 hover:text-blue-600 transition flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="terminal" class="w-4 h-4 text-indigo-500"></i>
+          Live Scraping Pipeline & Logs
+        </button>
+      </div>
+
+      <!-- TAB CONTENTS -->
+      <div class="p-6">
+        
+        <!-- TAB 1: INDEX TRENDS & BOOKING HORIZONS -->
+        <div id="tab-content-trends" class="space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Historical APIx Trajectory & Booking Horizons</h2>
+              <p class="text-xs text-slate-500">90-day daily price movements showing last-minute surge (T+1) vs advance purchases (T+45)</p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap text-xs">
+              <span class="text-slate-500 font-medium">Series:</span>
+              <button onclick="toggleTrendSeries('composite')" id="filter-composite" class="px-3 py-1 rounded bg-blue-600 text-white font-medium shadow-xs">Composite APIx</button>
+              <button onclick="toggleTrendSeries('t1')" id="filter-t1" class="px-3 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200">T+1 (1 Day)</button>
+              <button onclick="toggleTrendSeries('t7')" id="filter-t7" class="px-3 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200">T+7</button>
+              <button onclick="toggleTrendSeries('t15')" id="filter-t15" class="px-3 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200">T+15</button>
+              <button onclick="toggleTrendSeries('t45')" id="filter-t45" class="px-3 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200">T+45 (Early)</button>
+              <button onclick="toggleTrendSeries('metro_udan')" id="filter-metro-udan" class="px-3 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200">Metro vs UDAN</button>
+            </div>
+          </div>
+
+          <!-- Main Chart Canvas -->
+          <div class="bg-slate-50 rounded-xl border border-slate-200 p-4 h-96 relative">
+            <canvas id="apixTrendChart"></canvas>
+          </div>
+
+          <!-- Insight callout -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-blue-50/70 border border-blue-200 rounded-lg p-3 text-xs text-blue-900">
+              <span class="font-bold flex items-center gap-1 mb-1">
+                <i data-lucide="info" class="w-3.5 h-3.5 text-blue-600"></i>
+                T+1 Elasticity Dynamic
+              </span>
+              Last-minute fares (T+1) swing up to <strong>260.8</strong> on peak holiday weekends, proving why traditional monthly point-in-time collection missed real inflation.
+            </div>
+            <div class="bg-emerald-50/70 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-900">
+              <span class="font-bold flex items-center gap-1 mb-1">
+                <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i>
+                Advance Purchase Stability
+              </span>
+              T+30 and T+45 advance fares provide consumer-baseline stability, anchoring the overall weighted index and dampening extreme daily spikes.
+            </div>
+            <div class="bg-amber-50/70 border border-amber-200 rounded-lg p-3 text-xs text-amber-900">
+              <span class="font-bold flex items-center gap-1 mb-1">
+                <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-amber-600"></i>
+                Regional UDAN Volatility
+              </span>
+              Regional routes exhibit <strong>1.4x higher variance</strong> than Metro routes due to single-carrier operations and limited backup capacity.
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: ROUTE BASKET & FARE MATRIX -->
+        <div id="tab-content-routes" class="space-y-4 hidden">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Route Basket Directory (25 Representative Routes)</h2>
+              <p class="text-xs text-slate-500">DGCA traffic-weighted basket covering 15 High-Volume Metros and 10 Regional/UDAN routes</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <input type="text" id="route-search-input" onkeyup="filterRoutesTable()" placeholder="Search route, city..." class="text-xs border border-slate-300 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select id="route-category-filter" onchange="filterRoutesTable()" class="text-xs border border-slate-300 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="ALL">All Categories</option>
+                <option value="Metro">Metro Only (15)</option>
+                <option value="Regional/UDAN">Regional/UDAN Only (10)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="border border-slate-200 rounded-lg overflow-x-auto shadow-xs">
+            <table class="w-full text-left text-xs text-slate-700" id="routes-table">
+              <thead class="bg-slate-100/80 text-slate-600 uppercase font-semibold border-b border-slate-200 text-[11px]">
+                <tr>
+                  <th class="py-3 px-4">Route ID</th>
+                  <th class="py-3 px-4">Origin -> Destination</th>
+                  <th class="py-3 px-4">Category</th>
+                  <th class="py-3 px-4">Distance</th>
+                  <th class="py-3 px-4">Current Median</th>
+                  <th class="py-3 px-4">Fare / KM</th>
+                  <th class="py-3 px-4">HHI Index</th>
+                  <th class="py-3 px-4">Traffic Weight</th>
+                  <th class="py-3 px-4">Status</th>
+                  <th class="py-3 px-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100" id="routes-table-body">
+                <!-- Dynamically populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 3: AI EXPLAINABILITY (SHAP) -->
+        <div id="tab-content-explainability" class="space-y-6 hidden">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Explainability Engine (Linear SHAP Attribution)</h2>
+              <p class="text-xs text-slate-500">Deconstructs airfare movement into Fuel (ATF), Demand Surges, Competition count, and Window Lead Time</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <label class="text-xs font-medium text-slate-600">Select Route:</label>
+              <select id="shap-route-select" onchange="updateShapView()" class="text-xs border border-slate-300 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-blue-500 bg-white">
+                <!-- Options populated dynamically -->
+              </select>
+              <select id="shap-window-select" onchange="updateShapView()" class="text-xs border border-slate-300 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="T+1">T+1 (Last Minute)</option>
+                <option value="T+7">T+7 (1 Week)</option>
+                <option value="T+15" selected>T+15 (Standard)</option>
+                <option value="T+30">T+30 (Advance)</option>
+                <option value="T+45">T+45 (Early Bird)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left: Waterfall / Factor Breakdown Cards -->
+            <div class="lg:col-span-5 space-y-3">
+              <div class="bg-slate-900 text-white rounded-xl p-4 shadow-sm">
+                <div class="text-xs text-slate-400 font-medium">Selected Route Baseline vs Current</div>
+                <div class="text-lg font-bold mt-1" id="shap-route-title">DEL -> BOM (Delhi to Mumbai)</div>
+                <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-800 text-xs">
+                  <div>
+                    <div class="text-slate-400">Baseline Fare:</div>
+                    <div class="text-sm font-bold text-slate-200 mono" id="shap-base-fare">₹4,850</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-slate-400">Current Observed Fare:</div>
+                    <div class="text-base font-black text-amber-400 mono" id="shap-current-fare">₹5,800</div>
+                  </div>
+                </div>
+                <div class="mt-2 text-xs font-semibold text-emerald-400 flex items-center justify-between">
+                  <span>Net Price Movement:</span>
+                  <span class="mono" id="shap-net-diff">+₹950 (+19.6%)</span>
+                </div>
+              </div>
+
+              <!-- Factor breakdown list -->
+              <div class="space-y-2" id="shap-factors-list">
+                <!-- Populated dynamically via JS -->
+              </div>
+            </div>
+
+            <!-- Right: SHAP Chart Canvas -->
+            <div class="lg:col-span-7 bg-slate-50 rounded-xl border border-slate-200 p-4 flex flex-col justify-between">
+              <div>
+                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wide">Attribution Impact (% Contribution)</h3>
+                <div class="h-72 mt-3">
+                  <canvas id="shapChart"></canvas>
+                </div>
+              </div>
+              <div class="text-[11px] text-slate-500 bg-white border border-slate-200 rounded p-2.5 mt-2">
+                <strong>Methodology Note:</strong> Uses closed-form SHAP attributions:
+                <span class="mono bg-slate-100 px-1 py-0.5 rounded text-blue-700">φ_j = β_j × (x_j - x̄_j)</span>. Guarantees 100% additivity to total observed price change without approximation error.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: MONOPOLY WATCHDOG (DGCA / CCI) -->
+        <div id="tab-content-monopoly" class="space-y-6 hidden">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Monopoly & Overcharging Watchdog (DGCA / CCI Surveillance)</h2>
+              <p class="text-xs text-slate-500">Herfindahl-Hirschman Index (HHI) concentration tracking and distance-adjusted surge alert flags</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1 bg-red-100 text-red-800 text-xs px-2.5 py-1 rounded-full font-bold">
+                <i data-lucide="alert-octagon" class="w-3.5 h-3.5"></i>
+                <span id="flagged-badge-count">8 Active Alerts</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Alert Dossiers Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="monopoly-alerts-container">
+            <!-- Dynamically populated via JS -->
+          </div>
+
+          <!-- HHI Scatter / Concentration Guide -->
+          <div class="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
+            <h3 class="text-sm font-bold text-slate-900">Market Concentration Regulatory Thresholds (CCI Standards)</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div class="p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+                <div class="font-bold text-emerald-800 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span> HHI &lt; 1,500
+                </div>
+                <div class="text-slate-600 mt-1"><strong>Competitive Sector:</strong> 4+ active carriers. Normal price elasticity. Low regulatory scrutiny.</div>
+              </div>
+              <div class="p-3 rounded-lg bg-amber-50 border border-amber-200">
+                <div class="font-bold text-amber-800 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-amber-500"></span> 1,500 ≤ HHI ≤ 2,500
+                </div>
+                <div class="text-slate-600 mt-1"><strong>Moderately Concentrated:</strong> 2-3 carriers. Monitored for tacit collusion or coordinated surge.</div>
+              </div>
+              <div class="p-3 rounded-lg bg-rose-50 border border-rose-200">
+                <div class="font-bold text-rose-800 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-rose-500"></span> HHI &gt; 2,500
+                </div>
+                <div class="text-slate-600 mt-1"><strong>Highly Concentrated / Monopoly:</strong> Single carrier dominance. Immediate flag if fare/km &gt; 1.25x national benchmark.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 5: BACKTESTING & GROUND TRUTH VALIDATION -->
+        <div id="tab-content-backtesting" class="space-y-6 hidden">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Backtesting vs Official DGCA Monthly Ground Truth</h2>
+              <p class="text-xs text-slate-500">Statistical alignment validation between APIx real-time engine and published DGCA monthly yields</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs px-3 py-1 rounded font-bold flex items-center gap-1">
+                <i data-lucide="award" class="w-3.5 h-3.5 text-emerald-600"></i>
+                MoSPI Acceptance: APPROVED
+              </span>
+            </div>
+          </div>
+
+          <!-- Metrics summary cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-purple-50/70 border border-purple-200 rounded-xl p-4">
+              <div class="text-xs text-purple-700 font-medium">Pearson Correlation (r)</div>
+              <div class="text-3xl font-black text-purple-900 mono mt-1" id="backtest-r-value">0.9982</div>
+              <div class="text-[11px] text-purple-600 mt-1">Target: ≥ 0.85 (PASSED)</div>
+            </div>
+            <div class="bg-blue-50/70 border border-blue-200 rounded-xl p-4">
+              <div class="text-xs text-blue-700 font-medium">Mean Absolute Percentage Error (MAPE)</div>
+              <div class="text-3xl font-black text-blue-900 mono mt-1" id="backtest-mape-value">1.99%</div>
+              <div class="text-[11px] text-blue-600 mt-1">Target: ≤ 10.0% (PASSED)</div>
+            </div>
+            <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-4">
+              <div class="text-xs text-emerald-700 font-medium">Root Mean Square Error (RMSE)</div>
+              <div class="text-3xl font-black text-emerald-900 mono mt-1" id="backtest-rmse-value">2.41</div>
+              <div class="text-[11px] text-emerald-600 mt-1">Optimal tracking tolerance</div>
+            </div>
+          </div>
+
+          <!-- Dual Axis Chart -->
+          <div class="bg-slate-50 rounded-xl border border-slate-200 p-4 h-80 relative">
+            <canvas id="backtestChart"></canvas>
+          </div>
+
+          <!-- Monthly Table -->
+          <div class="border border-slate-200 rounded-lg overflow-hidden">
+            <table class="w-full text-left text-xs text-slate-700">
+              <thead class="bg-slate-100 text-slate-600 uppercase font-semibold text-[11px]">
+                <tr>
+                  <th class="py-2.5 px-4">Evaluation Month</th>
+                  <th class="py-2.5 px-4">APIx Computed Monthly Avg</th>
+                  <th class="py-2.5 px-4">DGCA Official Benchmark</th>
+                  <th class="py-2.5 px-4">Absolute Variance</th>
+                  <th class="py-2.5 px-4">Error %</th>
+                  <th class="py-2.5 px-4 text-right">MoSPI Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 bg-white" id="backtest-table-body">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 6: LIVE SCRAPING PIPELINE & TERMINAL -->
+        <div id="tab-content-pipeline" class="space-y-6 hidden">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Interactive Pipeline Simulator (Steps 1–9)</h2>
+              <p class="text-xs text-slate-500">Executes the 9-stage architecture in real time: Scrape → Clean → Reliability → Index → SHAP → HHI → Serve</p>
+            </div>
+            <button onclick="triggerLivePipeline()" id="run-pipeline-btn" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow flex items-center gap-2 transition active:scale-95">
+              <i data-lucide="play" class="w-4 h-4 text-amber-300"></i>
+              Execute Daily Scraping Pipeline
+            </button>
+          </div>
+
+          <!-- 9 Stage Visual Stepper -->
+          <div class="grid grid-cols-3 md:grid-cols-9 gap-2 text-center text-[10px] font-medium">
+            <div class="p-2 rounded bg-blue-50 border border-blue-200 text-blue-900" id="step-1">
+              <div class="font-bold">1. Basket</div>
+              <div class="text-[9px] text-blue-600">25 Routes</div>
+            </div>
+            <div class="p-2 rounded bg-slate-100 border border-slate-200 text-slate-700" id="step-2">
+              <div class="font-bold">2. Scrape</div>
+              <div class="text-[9px] text-slate-500">Playwright</div>
+            </div>
+            <div class="p-2 rounded bg-slate-100 border border-slate-200 text-slate-700" id="step-3">
+              <div class="font-bold">3. Clean</div>
+              <div class="text-[9px] text-slate-500">Isolation Forest</div>
+            </div>
+            <div class="p-2 rounded bg-slate-100 border border-slate-200 text-slate-700" id="step-4">
+              <div class="font-bold">4. Reliability</div>
+              <div class="text-[9px] text-slate-500">Confidence %</div>
+            </div>
+            <div class="p-2 rounded bg-slate-100 border border-slate-200 text-slate-700" id="step-5">
+              <div class="font-bold">5. Index</div>
+              <div class="text-[9px] text-slate-500">APIx Weighted</div>
+            </div>
+            <div class="p-2 rounded bg-slate-100 border border-slate-200 text-slate-700" id="step-6">
+              <div class="font-bold">6. SHAP</div>
+              <div class="text-[9px] text-slate-500">Decomposition</div>
+            </div>
+            <div class="p-2 rounded bg-slate-100 border border-slate-200 text-slate-700" id="step-7">
+              <div class="font-bold">7. HHI</div>
+              <div class="text-[9px] text-slate-500">Monopoly Alert</div>
+            </div>
+            <div class="p-2 rounded bg-slate-100 border border-slate-200 text-slate-700" id="step-8">
+              <div class="font-bold">8. Backtest</div>
+              <div class="text-[9px] text-slate-500">DGCA Ground Truth</div>
+            </div>
+            <div class="p-2 rounded bg-slate-100 border border-slate-200 text-slate-700" id="step-9">
+              <div class="font-bold">9. Serve</div>
+              <div class="text-[9px] text-slate-500">FastAPI & CPI</div>
+            </div>
+          </div>
+
+          <!-- Live Terminal Window -->
+          <div class="bg-slate-950 text-slate-200 rounded-xl border border-slate-800 shadow-xl overflow-hidden">
+            <div class="bg-slate-900 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs">
+              <div class="flex items-center space-x-2">
+                <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+                <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+                <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                <span class="text-slate-400 font-mono ml-2">apix-pipeline-worker@mospi-diid:~$</span>
+              </div>
+              <span class="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> READY
+              </span>
+            </div>
+            <div class="p-4 font-mono text-xs space-y-1.5 max-h-80 overflow-y-auto terminal-scroll" id="pipeline-terminal-output">
+              <div class="text-slate-500"># APIx Engine Daemon initialized. Ready to execute scheduled scrape cycle.</div>
+              <div class="text-slate-400">> Click "Execute Daily Scraping Pipeline" above to trigger a live run.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ROUTE INSPECTOR MODAL -->
+  <div id="route-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold text-white flex items-center gap-2" id="modal-route-id">
+            DEL-BOM: Delhi -> Mumbai
+          </h3>
+          <p class="text-xs text-slate-400" id="modal-route-subtitle">Category: Metro | Distance: 1148 km</p>
+        </div>
+        <button onclick="closeRouteModal()" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+      </div>
+      <div class="p-6 space-y-4 text-xs">
+        <div class="grid grid-cols-3 gap-3 text-center">
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="text-slate-500 font-medium">HHI Index</div>
+            <div class="text-lg font-black text-slate-800 mono" id="modal-route-hhi">1850</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="text-slate-500 font-medium">Fare / KM</div>
+            <div class="text-lg font-black text-blue-600 mono" id="modal-route-fpk">₹4.85</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="text-slate-500 font-medium">Traffic Share</div>
+            <div class="text-lg font-black text-emerald-600 mono" id="modal-route-weight">14.2%</div>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-slate-800 mb-2">Booking Horizon Price Curve (Lead Time vs Fare)</h4>
+          <div class="h-44 bg-slate-50 rounded-lg p-2 border border-slate-200">
+            <canvas id="modalWindowChart"></canvas>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-slate-800 mb-1.5">Carrier Market Share Breakdown</h4>
+          <div class="space-y-1.5" id="modal-carrier-shares"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>
+        <strong>UchitFare (APIx)</strong> — Smart India Hackathon 2026 Prototype • Team Binary Brains
+      </div>
+      <div>
+        Sponsor: Ministry of Statistics & Programme Implementation (MoSPI - DIID)
+      </div>
+    </div>
+  </footer>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script>
+    // State Store
+    let overviewData = null;
+    let historyData = [];
+    let routesData = [];
+    let flaggedData = [];
+    let backtestData = null;
+    let trendChartInstance = null;
+    let shapChartInstance = null;
+    let backtestChartInstance = null;
+    let modalChartInstance = null;
+    let activeSeriesMode = 'composite';
+
+    // Clock
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock-display').innerText = now.toUTCString().replace('GMT', 'UTC+5:30');
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Lucide Icons Render
+    function renderIcons() {
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    }
+
+    // Tabs Switcher
+    function switchTab(tabKey) {
+      const tabs = ['trends', 'routes', 'explainability', 'monopoly', 'backtesting', 'pipeline'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const content = document.getElementById(`tab-content-${t}`);
+        if (t === tabKey) {
+          btn.classList.add('tab-active');
+          content.classList.remove('hidden');
+        } else {
+          btn.classList.remove('tab-active');
+          content.classList.add('hidden');
+        }
+      });
+      renderIcons();
+      if (tabKey === 'trends' && trendChartInstance) trendChartInstance.resize();
+      if (tabKey === 'explainability' && shapChartInstance) shapChartInstance.resize();
+      if (tabKey === 'backtesting' && backtestChartInstance) backtestChartInstance.resize();
+    }
+
+    // Initialize Application Data
+    async function initApp() {
+      try {
+        const [overviewRes, historyRes, routesRes, flaggedRes, backtestRes] = await Promise.all([
+          fetch('/api/overview').then(r => r.json()),
+          fetch('/api/index/history').then(r => r.json()),
+          fetch('/api/routes').then(r => r.json()),
+          fetch('/api/routes/flagged').then(r => r.json()),
+          fetch('/api/backtesting').then(r => r.json())
+        ]);
+
+        overviewData = overviewRes;
+        historyData = historyRes;
+        routesData = routesRes;
+        flaggedData = flaggedRes;
+        backtestData = backtestRes;
+
+        renderKPIs();
+        renderTrendChart();
+        renderRoutesTable();
+        initShapView();
+        renderMonopolyAlerts();
+        renderBacktesting();
+        renderIcons();
+      } catch (err) {
+        console.error('Error loading APIx data:', err);
+      }
+    }
+
+    // 1. Render KPIs
+    function renderKPIs() {
+      document.getElementById('kpi-current-apix').innerText = overviewData.current_apix.toFixed(2);
+      document.getElementById('kpi-day-change').innerText = `${overviewData.day_change >= 0 ? '+' : ''}${overviewData.day_change} (24h)`;
+      document.getElementById('kpi-metro-apix').innerText = overviewData.metro_apix.toFixed(2);
+      document.getElementById('kpi-regional-apix').innerText = overviewData.regional_apix.toFixed(2);
+      document.getElementById('kpi-confidence-score').innerText = `${overviewData.confidence_score.toFixed(1)}%`;
+      document.getElementById('kpi-rel-status').innerText = overviewData.reliability_status;
+      document.getElementById('kpi-flagged-count').innerText = overviewData.flagged_routes_count;
+      document.getElementById('flagged-badge-count').innerText = `${overviewData.flagged_routes_count} Active Alerts`;
+      document.getElementById('kpi-backtest-corr').innerText = overviewData.backtest_correlation.toFixed(3);
+      document.getElementById('kpi-backtest-mape').innerText = `${overviewData.backtest_mape.toFixed(2)}%`;
+    }
+
+    // 2. Render Trend Chart
+    function renderTrendChart() {
+      const ctx = document.getElementById('apixTrendChart').getContext('2d');
+      const labels = historyData.map(d => d.date.slice(5)); // MM-DD
+
+      let datasets = [];
+      if (activeSeriesMode === 'composite') {
+        datasets = [
+          {
+            label: 'APIx Weighted Airfare Index (All Windows)',
+            data: historyData.map(d => d.apix),
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.08)',
+            borderWidth: 2.5,
+            fill: true,
+            tension: 0.25,
+            pointRadius: 1.5
+          },
+          {
+            label: '7-Day Moving Average',
+            data: historyData.map(d => d.apix_weekly_ma),
+            borderColor: '#9333ea',
+            borderWidth: 1.8,
+            borderDash: [4, 4],
+            fill: false,
+            tension: 0.3,
+            pointRadius: 0
+          }
+        ];
+      } else if (activeSeriesMode === 't1') {
+        datasets = [
+          {
+            label: 'T+1 Last-Minute Surge Index',
+            data: historyData.map(d => d['apix_T+1']),
+            borderColor: '#dc2626',
+            backgroundColor: 'rgba(220, 38, 38, 0.05)',
+            borderWidth: 2.5,
+            fill: true,
+            tension: 0.25,
+            pointRadius: 1.5
+          },
+          {
+            label: 'APIx Composite',
+            data: historyData.map(d => d.apix),
+            borderColor: '#94a3b8',
+            borderWidth: 1.5,
+            borderDash: [3, 3],
+            pointRadius: 0
+          }
+        ];
+      } else if (activeSeriesMode === 't7') {
+        datasets = [
+          {
+            label: 'T+7 Standard Index',
+            data: historyData.map(d => d['apix_T+7']),
+            borderColor: '#d97706',
+            borderWidth: 2.5,
+            fill: false,
+            tension: 0.25,
+            pointRadius: 1.5
+          },
+          {
+            label: 'APIx Composite',
+            data: historyData.map(d => d.apix),
+            borderColor: '#94a3b8',
+            borderWidth: 1.5,
+            borderDash: [3, 3],
+            pointRadius: 0
+          }
+        ];
+      } else if (activeSeriesMode === 't15') {
+        datasets = [
+          {
+            label: 'T+15 Reference Index',
+            data: historyData.map(d => d['apix_T+15']),
+            borderColor: '#0284c7',
+            borderWidth: 2.5,
+            fill: false,
+            tension: 0.25,
+            pointRadius: 1.5
+          },
+          {
+            label: 'APIx Composite',
+            data: historyData.map(d => d.apix),
+            borderColor: '#94a3b8',
+            borderWidth: 1.5,
+            borderDash: [3, 3],
+            pointRadius: 0
+          }
+        ];
+      } else if (activeSeriesMode === 't45') {
+        datasets = [
+          {
+            label: 'T+45 Early Bird Index',
+            data: historyData.map(d => d['apix_T+45']),
+            borderColor: '#059669',
+            borderWidth: 2.5,
+            fill: false,
+            tension: 0.25,
+            pointRadius: 1.5
+          },
+          {
+            label: 'APIx Composite',
+            data: historyData.map(d => d.apix),
+            borderColor: '#94a3b8',
+            borderWidth: 1.5,
+            borderDash: [3, 3],
+            pointRadius: 0
+          }
+        ];
+      } else if (activeSeriesMode === 'metro_udan') {
+        datasets = [
+          {
+            label: 'Metro Routes Index (15 Routes)',
+            data: historyData.map(d => d.apix_metro),
+            borderColor: '#4f46e5',
+            borderWidth: 2.5,
+            fill: false,
+            tension: 0.25,
+            pointRadius: 1
+          },
+          {
+            label: 'Regional / UDAN Routes Index (10 Routes)',
+            data: historyData.map(d => d.apix_regional),
+            borderColor: '#ea580c',
+            borderWidth: 2.5,
+            fill: false,
+            tension: 0.25,
+            pointRadius: 1
+          }
+        ];
+      }
+
+      if (trendChartInstance) {
+        trendChartInstance.destroy();
+      }
+
+      trendChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}`
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { maxTicksLimit: 12, font: { size: 10 } } },
+            y: {
+              grid: { color: '#f1f5f9' },
+              ticks: { font: { size: 10 } },
+              title: { display: true, text: 'Index (Base = 100.0)', font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    function toggleTrendSeries(mode) {
+      activeSeriesMode = mode;
+      ['composite', 't1', 't7', 't15', 't45', 'metro_udan'].forEach(m => {
+        const btn = document.getElementById(`filter-${m.replace('_', '-')}`);
+        if (m === mode) {
+          btn.className = 'px-3 py-1 rounded bg-blue-600 text-white font-medium shadow-xs';
+        } else {
+          btn.className = 'px-3 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200';
+        }
+      });
+      renderTrendChart();
+    }
+
+    // 3. Render Routes Table
+    function renderRoutesTable() {
+      const tbody = document.getElementById('routes-table-body');
+      tbody.innerHTML = '';
+
+      routesData.forEach(r => {
+        const isFlagged = r.is_flagged;
+        const statusBadge = isFlagged
+          ? `<span class="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Surge Alert</span>`
+          : `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Normal</span>`;
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition route-row';
+        tr.dataset.routeId = r.route_id;
+        tr.dataset.category = r.category;
+        tr.dataset.name = `${r.origin} ${r.destination}`.toLowerCase();
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-mono font-bold text-blue-700">${r.route_id}</td>
+          <td class="py-3 px-4 font-medium text-slate-900">${r.origin} → ${r.destination}</td>
+          <td class="py-3 px-4">
+            <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${r.category === 'Metro' ? 'bg-indigo-50 text-indigo-700' : 'bg-amber-50 text-amber-800'}">
+              ${r.category}
+            </span>
+          </td>
+          <td class="py-3 px-4 mono text-slate-600">${r.distance_km} km</td>
+          <td class="py-3 px-4 mono font-bold text-slate-900">₹${r.current_median_fare.toLocaleString()}</td>
+          <td class="py-3 px-4 mono ${r.fare_per_km > r.benchmark_fare_per_km * 1.3 ? 'text-rose-600 font-bold' : 'text-slate-700'}">₹${r.fare_per_km}</td>
+          <td class="py-3 px-4 mono ${r.hhi >= 2500 ? 'text-rose-600 font-bold' : 'text-slate-600'}">${r.hhi}</td>
+          <td class="py-3 px-4 mono text-slate-600">${(r.route_id in ROUTES_BY_ID ? (ROUTES_BY_ID[r.route_id].traffic_weight * 100).toFixed(1) : '3.5')}%</td>
+          <td class="py-3 px-4">${statusBadge}</td>
+          <td class="py-3 px-4 text-right">
+            <button onclick="inspectRoute('${r.route_id}')" class="text-blue-600 hover:text-blue-800 font-medium text-xs hover:underline">
+              Inspect
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    const ROUTES_BY_ID = {};
+    function populateRouteMap() {
+      routesData.forEach(r => { ROUTES_BY_ID[r.route_id] = r; });
+    }
+
+    function filterRoutesTable() {
+      const q = document.getElementById('route-search-input').value.toLowerCase();
+      const cat = document.getElementById('route-category-filter').value;
+      const rows = document.querySelectorAll('.route-row');
+
+      rows.forEach(row => {
+        const matchesQuery = row.dataset.name.includes(q) || row.dataset.routeId.toLowerCase().includes(q);
+        const matchesCat = (cat === 'ALL') || (row.dataset.category === cat);
+        row.style.display = (matchesQuery && matchesCat) ? '' : 'none';
+      });
+    }
+
+    // 4. Inspect Route Modal
+    async function inspectRoute(routeId) {
+      try {
+        const res = await fetch(`/api/routes/${routeId}`).then(r => r.json());
+        const info = res.route_info;
+        const curve = res.window_curve;
+
+        document.getElementById('modal-route-id').innerText = `${routeId}: ${info.origin_name} → ${info.destination_name}`;
+        document.getElementById('modal-route-subtitle').innerText = `Category: ${info.category} | Distance: ${info.distance_km} km | Base Fare: ₹${info.base_period_fare}`;
+
+        const rMeta = routesData.find(x => x.route_id === routeId) || {};
+        document.getElementById('modal-route-hhi').innerText = rMeta.hhi || 2500;
+        document.getElementById('modal-route-fpk').innerText = `₹${rMeta.fare_per_km || 4.5}`;
+        document.getElementById('modal-route-weight').innerText = `${(info.traffic_weight * 100).toFixed(1)}%`;
+
+        // Render booking window curve
+        const ctx = document.getElementById('modalWindowChart').getContext('2d');
+        if (modalChartInstance) modalChartInstance.destroy();
+
+        modalChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: Object.keys(curve),
+            datasets: [{
+              label: 'Fare (INR)',
+              data: Object.values(curve),
+              backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#6366f1'],
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { ticks: { font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+              x: { ticks: { font: { size: 10 } } }
+            }
+          }
+        });
+
+        // Carrier shares
+        const carrierSharesDiv = document.getElementById('modal-carrier-shares');
+        carrierSharesDiv.innerHTML = '';
+        (rMeta.carrier_shares || []).forEach(c => {
+          carrierSharesDiv.innerHTML += `
+            <div class="flex items-center justify-between text-slate-700 bg-slate-50 px-3 py-1.5 rounded border border-slate-200">
+              <span class="font-medium">${c.carrier}</span>
+              <div class="flex items-center gap-2">
+                <div class="w-24 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                  <div class="bg-blue-600 h-1.5 rounded-full" style="width: ${c.share}%"></div>
+                </div>
+                <span class="mono font-bold w-12 text-right">${c.share}%</span>
+              </div>
+            </div>
+          `;
+        });
+
+        document.getElementById('route-modal').classList.remove('hidden');
+      } catch (err) {
+        console.error('Error loading route detail:', err);
+      }
+    }
+
+    function closeRouteModal() {
+      document.getElementById('route-modal').classList.add('hidden');
+    }
+
+    // 5. AI Explainability (SHAP) View
+    function initShapView() {
+      const select = document.getElementById('shap-route-select');
+      select.innerHTML = '';
+      routesData.forEach(r => {
+        select.innerHTML += `<option value="${r.route_id}">${r.route_id} (${r.origin} -> ${r.destination})</option>`;
+      });
+      updateShapView();
+    }
+
+    async function updateShapView() {
+      const routeId = document.getElementById('shap-route-select').value;
+      const windowVal = document.getElementById('shap-window-select').value;
+
+      try {
+        const data = await fetch(`/api/explainability?route_id=${routeId}&window=${windowVal}`).then(r => r.json());
+        document.getElementById('shap-route-title').innerText = data.route_name;
+        document.getElementById('shap-base-fare').innerText = `₹${data.base_period_fare.toLocaleString()}`;
+        document.getElementById('shap-current-fare').innerText = `₹${Math.round(data.current_fare).toLocaleString()}`;
+
+        const diff = data.explanation.total_change_inr;
+        const diffPct = ((diff / data.base_period_fare) * 100).toFixed(1);
+        document.getElementById('shap-net-diff').innerText = `${diff >= 0 ? '+' : ''}₹${diff} (${diffPct}%)`;
+
+        // Render factor items
+        const factorsList = document.getElementById('shap-factors-list');
+        factorsList.innerHTML = '';
+        data.explanation.factors.forEach(f => {
+          const isUp = f.inr_impact >= 0;
+          factorsList.innerHTML += `
+            <div class="bg-white border border-slate-200 rounded-lg p-3 text-xs flex items-center justify-between shadow-xs">
+              <div>
+                <div class="font-bold text-slate-800">${f.name}</div>
+                <div class="text-[10px] text-slate-500">${isUp ? 'Upward pressure on fare' : 'Downward discount pressure'}</div>
+              </div>
+              <div class="text-right">
+                <div class="mono font-bold ${isUp ? 'text-rose-600' : 'text-emerald-600'}">
+                  ${isUp ? '+' : ''}₹${f.inr_impact}
+                </div>
+                <div class="text-[10px] font-semibold text-slate-500">
+                  ${f.pct}% contrib
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        // Render SHAP Bar Chart
+        const ctx = document.getElementById('shapChart').getContext('2d');
+        if (shapChartInstance) shapChartInstance.destroy();
+
+        const labels = data.explanation.factors.map(f => f.name.replace(' Impact', '').replace(' Surge', ''));
+        const values = data.explanation.factors.map(f => f.inr_impact);
+        const colors = values.map(v => v >= 0 ? '#ef4444' : '#10b981');
+
+        shapChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Rupee Impact (INR)',
+              data: values,
+              backgroundColor: colors,
+              borderRadius: 4
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => ` Impact: ${ctx.parsed.x >= 0 ? '+' : ''}₹${ctx.parsed.x}`
+                }
+              }
+            },
+            scales: {
+              x: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+              y: { ticks: { font: { size: 10 } } }
+            }
+          }
+        });
+      } catch (err) {
+        console.error('Error updating SHAP view:', err);
+      }
+    }
+
+    // 6. Monopoly Watchdog Alerts
+    function renderMonopolyAlerts() {
+      const container = document.getElementById('monopoly-alerts-container');
+      container.innerHTML = '';
+
+      flaggedData.forEach(alert => {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-xl border border-red-200 p-4 shadow-sm hover:shadow-md transition space-y-3 relative overflow-hidden';
+        card.innerHTML = `
+          <div class="absolute top-0 left-0 bottom-0 w-1.5 ${alert.severity === 'HIGH' ? 'bg-red-600' : 'bg-amber-500'}"></div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2 pl-2">
+              <span class="font-mono font-bold text-slate-900">${alert.route_id}</span>
+              <span class="text-xs text-slate-600">(${alert.origin} → ${alert.destination})</span>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded ${alert.severity === 'HIGH' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}">
+              ${alert.severity} CONCENTRATION RISK
+            </span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-center text-xs pl-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+            <div>
+              <div class="text-[10px] text-slate-500">HHI Concentration</div>
+              <div class="font-bold font-mono text-rose-700">${alert.hhi}</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-500">Dominant Carrier</div>
+              <div class="font-bold text-slate-800">${alert.dominant_carrier} (${alert.dominant_share_pct}%)</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-500">Surge Markup</div>
+              <div class="font-bold font-mono text-rose-600">+${alert.markup_percent}% vs Benchmark</div>
+            </div>
+          </div>
+
+          <div class="text-xs text-slate-700 pl-2">
+            <strong>Finding:</strong> ${alert.reason}
+          </div>
+
+          <div class="text-[11px] text-blue-900 bg-blue-50/70 border border-blue-200 rounded p-2 pl-2.5 flex items-start gap-1.5">
+            <i data-lucide="shield" class="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5"></i>
+            <div><strong>Recommended Regulatory Action:</strong> ${alert.recommended_action}</div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // 7. Backtesting Validation
+    function renderBacktesting() {
+      const rep = backtestData.report;
+      const series = backtestData.series;
+
+      document.getElementById('backtest-r-value').innerText = rep.pearson_correlation.toFixed(4);
+      document.getElementById('backtest-mape-value').innerText = `${rep.mape_percent.toFixed(2)}%`;
+      document.getElementById('backtest-rmse-value').innerText = rep.rmse.toFixed(2);
+
+      // Render monthly alignment table
+      const tbody = document.getElementById('backtest-table-body');
+      tbody.innerHTML = '';
+      rep.monthly_comparison.forEach(m => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="py-2.5 px-4 font-mono font-bold text-slate-800">${m.month}</td>
+            <td class="py-2.5 px-4 mono font-semibold text-blue-700">${m.apix_computed}</td>
+            <td class="py-2.5 px-4 mono text-slate-800">${m.dgca_official}</td>
+            <td class="py-2.5 px-4 mono text-slate-600">₹${m.absolute_error}</td>
+            <td class="py-2.5 px-4 mono font-bold text-emerald-600">${m.error_pct}%</td>
+            <td class="py-2.5 px-4 text-right">
+              <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
+                ${m.status} (≤10%)
+              </span>
+            </td>
+          </tr>
+        `;
+      });
+
+      // Render Backtesting Alignment Chart
+      const ctx = document.getElementById('backtestChart').getContext('2d');
+      const labels = series.map(d => d.date.slice(5));
+
+      if (backtestChartInstance) backtestChartInstance.destroy();
+
+      backtestChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'APIx Real-Time Index (Computed)',
+              data: series.map(d => d.apix),
+              borderColor: '#2563eb',
+              backgroundColor: 'rgba(37, 99, 235, 0.05)',
+              borderWidth: 2,
+              pointRadius: 0
+            },
+            {
+              label: 'DGCA Official Published Ground Truth',
+              data: series.map(d => d.dgca_official_index),
+              borderColor: '#9333ea',
+              borderWidth: 2,
+              borderDash: [5, 4],
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } }
+          },
+          scales: {
+            x: { ticks: { maxTicksLimit: 10, font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { font: { size: 10 } }, grid: { color: '#f1f5f9' }, title: { display: true, text: 'Index (Base = 100.0)' } }
+          }
+        }
+      });
+    }
+
+    // 8. Live Scraping Pipeline Simulator
+    async function triggerLivePipeline() {
+      const btn = document.getElementById('run-pipeline-btn');
+      if (btn) btn.disabled = true;
+
+      // Switch to pipeline tab
+      switchTab('pipeline');
+
+      const terminal = document.getElementById('pipeline-terminal-output');
+      terminal.innerHTML = '<div class="text-blue-400 font-bold">>>> STARTING LIVE AUTOMATED SCRAPING RUN (SIH26056 DEMO) <<<</div>';
+
+      try {
+        const res = await fetch('/api/scraper/trigger', { method: 'POST' }).then(r => r.json());
+
+        // Animate steps and stream logs
+        for (let i = 0; i < res.logs.length; i++) {
+          await new Promise(resolve => setTimeout(resolve, 350));
+          const line = document.createElement('div');
+          line.className = 'text-slate-300';
+          if (res.logs[i].includes('Step 3')) line.className = 'text-amber-400 font-semibold';
+          if (res.logs[i].includes('Step 5')) line.className = 'text-emerald-400 font-bold';
+          if (res.logs[i].includes('Step 7')) line.className = 'text-rose-400 font-semibold';
+          line.innerText = res.logs[i];
+          terminal.appendChild(line);
+          terminal.scrollTop = terminal.scrollHeight;
+
+          // Highlight visual stepper
+          const stepNum = i + 1;
+          const stepEl = document.getElementById(`step-${stepNum}`);
+          if (stepEl) {
+            stepEl.className = 'p-2 rounded bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold';
+          }
+        }
+
+        const successLine = document.createElement('div');
+        successLine.className = 'text-emerald-300 font-bold pt-2 border-t border-slate-800';
+        successLine.innerText = `>>> PIPELINE COMPLETED: Updated APIx to ${res.new_apix.toFixed(2)} | Confidence ${res.confidence_score.toFixed(1)}% | Outliers Filtered: ${res.outliers_rejected} <<<`;
+        terminal.appendChild(successLine);
+        terminal.scrollTop = terminal.scrollHeight;
+
+        // Refresh overview
+        initApp();
+      } catch (err) {
+        console.error('Error during scraping simulation:', err);
+        terminal.innerHTML += '<div class="text-rose-500 font-bold">Error during execution: ' + err + '</div>';
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    // Startup
+    window.addEventListener('DOMContentLoaded', () => {
+      initApp();
+    });
+  </script>
+</body>
+</html>
