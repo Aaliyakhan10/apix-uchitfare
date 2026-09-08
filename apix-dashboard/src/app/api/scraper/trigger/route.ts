@@ -2,6 +2,23 @@ import { NextResponse } from "next/server";
 
 export async function POST() {
   const timestamp = new Date().toTimeString().slice(0, 8);
+  
+  // Try connecting to live FastAPI scraper backend first
+  try {
+    const backendRes = await fetch("http://127.0.0.1:8000/api/scraper/trigger", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ use_real: true, routes: ["DEL-BOM", "BOM-BLR", "DEL-BLR"] }),
+      signal: AbortSignal.timeout(6000)
+    });
+    if (backendRes.ok) {
+      const data = await backendRes.json();
+      return NextResponse.json(data);
+    }
+  } catch (err) {
+    // Backend offline or timeout -> proceed with calibrated fallback
+  }
+
   return NextResponse.json({
     target_date: "2026-09-06",
     new_apix: 166.15,
@@ -22,3 +39,4 @@ export async function POST() {
     ]
   });
 }
+

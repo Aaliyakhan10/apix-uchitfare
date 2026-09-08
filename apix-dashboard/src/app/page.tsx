@@ -368,8 +368,8 @@ export default function DashboardPage() {
                 activeTab === "anomalies" ? "border-b-2 border-blue-600 text-blue-600 font-bold bg-blue-50/30" : "text-slate-600 hover:text-blue-600"
               }`}
             >
-              <ShieldCheck className="w-4 h-4 text-teal-500" />
-              Isolation Forest Audit
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              Data Cleaning Pipeline
             </button>
 
             <button
