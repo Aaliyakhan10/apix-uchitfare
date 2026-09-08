@@ -15,6 +15,7 @@ export default function LiveIndexCalculator({ lang }: LiveIndexCalculatorProps) 
   const [metroWeight, setMetroWeight] = useState<number>(70);
   const [fuelShock, setFuelShock] = useState<number>(0);
   const [cleaningEnabled, setCleaningEnabled] = useState<boolean>(true);
+  const [passengerClassMix, setPassengerClassMix] = useState<"standard" | "common" | "executive">("standard");
 
   const udanWeight = 100 - metroWeight;
 
@@ -33,7 +34,13 @@ export default function LiveIndexCalculator({ lang }: LiveIndexCalculatorProps) 
   // 3. Cleaning impact: If cleaning is OFF, unquarantined outliers (business suite leaks, etc.) inflate index by +8.65
   const outlierDistortion = cleaningEnabled ? 0.0 : 8.65;
 
-  const newApix = Number((weightedBase * fuelMultiplier + outlierDistortion).toFixed(2));
+  // 4. Passenger class mix impact:
+  // Standard: 82% Econ, 11% Prem, 7% Biz (Base 0.0)
+  // Common: 100% Economy (-1.25 pts lower)
+  // Executive Heavy: 65% Econ, 20% Prem, 15% Biz (+4.80 pts higher)
+  const classShift = passengerClassMix === "common" ? -1.25 : passengerClassMix === "executive" ? 4.80 : 0.0;
+
+  const newApix = Number((weightedBase * fuelMultiplier + outlierDistortion + classShift).toFixed(2));
   const delta = Number((newApix - BASELINE_APIX).toFixed(2));
   const pctChange = Number(((delta / BASELINE_APIX) * 100).toFixed(2));
   
@@ -44,6 +51,7 @@ export default function LiveIndexCalculator({ lang }: LiveIndexCalculatorProps) 
     setMetroWeight(70);
     setFuelShock(0);
     setCleaningEnabled(true);
+    setPassengerClassMix("standard");
   };
 
   // Generate plain-language explanation for government officer
@@ -211,6 +219,50 @@ export default function LiveIndexCalculator({ lang }: LiveIndexCalculatorProps) 
                 {cleaningEnabled
                   ? (lang === "hi" ? "सक्रिय (ON)" : lang === "mr" ? "सुरू (ON)" : "ENABLED (ON)")
                   : (lang === "hi" ? "निष्क्रिय (OFF)" : lang === "mr" ? "बंद (OFF)" : "DISABLED (OFF)")}
+              </button>
+            </div>
+          </div>
+
+          {/* Passenger Class Mix Selector */}
+          <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-slate-900">
+                {lang === "hi" ? "यात्री श्रेणी बास्केट मिश्रण:" : lang === "mr" ? "प्रवासी वर्ग बास्केट रचना:" : "Passenger Class Basket Weighting:"}
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-mono">
+                {passengerClassMix === "standard" ? "82:11:7 Standard" : passengerClassMix === "common" ? "100% Economy" : "Executive Heavy"}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => setPassengerClassMix("standard")}
+                className={`py-1.5 px-2 rounded-xl text-xs font-bold transition cursor-pointer text-center ${
+                  passengerClassMix === "standard"
+                    ? "bg-slate-900 text-white shadow-xs"
+                    : "bg-white text-slate-700 hover:bg-slate-200 border border-slate-300"
+                }`}
+              >
+                {lang === "hi" ? "मानक MoSPI" : lang === "mr" ? "मानक MoSPI" : "MoSPI Standard"}
+              </button>
+              <button
+                onClick={() => setPassengerClassMix("common")}
+                className={`py-1.5 px-2 rounded-xl text-xs font-bold transition cursor-pointer text-center ${
+                  passengerClassMix === "common"
+                    ? "bg-blue-600 text-white shadow-xs"
+                    : "bg-white text-slate-700 hover:bg-slate-200 border border-slate-300"
+                }`}
+              >
+                {lang === "hi" ? "100% आम नागरिक" : lang === "mr" ? "१००% सामान्य नागरिक" : "100% Economy"}
+              </button>
+              <button
+                onClick={() => setPassengerClassMix("executive")}
+                className={`py-1.5 px-2 rounded-xl text-xs font-bold transition cursor-pointer text-center ${
+                  passengerClassMix === "executive"
+                    ? "bg-amber-600 text-white shadow-xs"
+                    : "bg-white text-slate-700 hover:bg-slate-200 border border-slate-300"
+                }`}
+              >
+                {lang === "hi" ? "कॉर्पोरेट ट्रंक" : lang === "mr" ? "कॉर्पोरेट ट्रंक" : "Executive Heavy"}
               </button>
             </div>
           </div>

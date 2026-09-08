@@ -10,11 +10,16 @@ import numpy as np
 import pandas as pd
 from apix_demo.backend.data.routes import ROUTES, BOOKING_WINDOWS
 
-def generate_90day_dataset(start_date_str="2026-06-01", days=90, seed=42):
+def generate_90day_dataset(start_date_str=None, days=90, seed=42):
     random.seed(seed)
     np.random.seed(seed)
     
-    start_date = datetime.date.fromisoformat(start_date_str)
+    if start_date_str is None:
+        today = datetime.date.today()
+        start_date = today - datetime.timedelta(days=days - 1)
+    else:
+        start_date = datetime.date.fromisoformat(start_date_str)
+        
     dates = [start_date + datetime.timedelta(days=i) for i in range(days)]
     
     # 1. ATF Fuel Index series (baseline 100 with realistic economic trend)
@@ -24,11 +29,13 @@ def generate_90day_dataset(start_date_str="2026-06-01", days=90, seed=42):
         atf_trend.append(round(max(88.0, min(122.0, atf_trend[-1] + change)), 2))
         
     # 2. Festivals / High Demand calendar (surge factors)
-    # Eid (June 17), Independence Day weekend (Aug 14-17), Raksha Bandhan (Aug 28), Janmashtami (Aug 31)
+    # Eid (June 17), Independence Day (Aug 15), Raksha Bandhan (Aug 28), Janmashtami (Sep 4), Ganesh Chaturthi (Sep 14)
     festival_dates = {
         "2026-06-16": 0.35, "2026-06-17": 0.48, "2026-06-18": 0.30,
         "2026-08-14": 0.52, "2026-08-15": 0.68, "2026-08-16": 0.58, "2026-08-17": 0.42,
-        "2026-08-27": 0.38, "2026-08-28": 0.48, "2026-08-29": 0.32
+        "2026-08-27": 0.38, "2026-08-28": 0.48, "2026-08-29": 0.32,
+        "2026-09-03": 0.40, "2026-09-04": 0.55, "2026-09-05": 0.38,
+        "2026-09-07": 0.28, "2026-09-08": 0.32
     }
     
     # Booking window price elasticity multipliers

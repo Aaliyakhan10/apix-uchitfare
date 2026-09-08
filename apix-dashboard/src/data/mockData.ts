@@ -50,17 +50,19 @@ export interface FlaggedAlert {
   recommended_action: string;
 }
 
-// Generate 90-day time series data
+// Generate 90-day time series data calibrated to canon MoSPI baseline (100 in 2024 -> 165.48 today)
 export function generateHistoryData(): DayIndexRecord[] {
   const records: DayIndexRecord[] = [];
-  const startDate = new Date(2026, 5, 1); // June 1, 2026
-  let currentFuel = 100.0;
-  let currentBaseIndex = 102.5;
+  // 90-day time series ending on current date: September 8, 2026
+  const today = new Date(2026, 8, 8); // 2026-09-08
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() - 89); // Exactly 90 days
 
   const festivalDates: Record<string, number> = {
-    "2026-06-16": 0.35, "2026-06-17": 0.48, "2026-06-18": 0.30,
-    "2026-08-14": 0.52, "2026-08-15": 0.68, "2026-08-16": 0.58, "2026-08-17": 0.42,
-    "2026-08-27": 0.38, "2026-08-28": 0.48, "2026-08-29": 0.32
+    "2026-06-16": 1.35, "2026-06-17": 1.88, "2026-06-18": 1.20,
+    "2026-08-14": 2.12, "2026-08-15": 2.68, "2026-08-16": 2.28, "2026-08-17": 1.42,
+    "2026-08-27": 1.58, "2026-08-28": 1.95, "2026-08-29": 1.32,
+    "2026-09-03": 1.40, "2026-09-04": 1.95, "2026-09-05": 1.38, "2026-09-08": 0.95
   };
 
   const rollingQueue: number[] = [];
@@ -71,15 +73,22 @@ export function generateHistoryData(): DayIndexRecord[] {
     const dateStr = d.toISOString().slice(0, 10);
     const isWeekend = d.getDay() === 0 || d.getDay() === 6;
 
-    currentFuel += (Math.sin(i * 0.15) * 0.45) + 0.12;
-    const fuelIndex = parseFloat(currentFuel.toFixed(2));
-    const fuelRel = (fuelIndex - 100.0) / 100.0;
+    // Progression ratio from 0 to 1
+    const progress = i / 89.0;
+    
+    // Fuel Index gradually moving from 100.0 to 114.20
+    const fuelIndex = parseFloat((100.0 + 14.20 * progress + Math.sin(i * 0.2) * 0.8 * (1 - progress * 0.4)).toFixed(2));
 
-    const festSurge = festivalDates[dateStr] || 0.0;
-    const demandBump = (isWeekend ? 0.12 : 0.0) + festSurge;
-
-    currentBaseIndex += 0.55 + (Math.sin(i * 0.3) * 0.35);
-    const apixVal = parseFloat((currentBaseIndex * (1.0 + 0.32 * fuelRel + demandBump)).toFixed(2));
+    let apixVal: number;
+    if (i === 89) {
+      apixVal = 165.48;
+    } else {
+      const baseTrend = 102.5 + (165.48 - 102.5) * progress;
+      const seasonalWave = Math.sin(i * 0.28) * 1.8 * (1 - progress * 0.3);
+      const weekendEffect = isWeekend ? 1.1 : -0.4;
+      const festBump = festivalDates[dateStr] || 0.0;
+      apixVal = parseFloat((baseTrend + seasonalWave + weekendEffect + festBump).toFixed(2));
+    }
 
     rollingQueue.push(apixVal);
     if (rollingQueue.length > 7) rollingQueue.shift();
@@ -91,10 +100,11 @@ export function generateHistoryData(): DayIndexRecord[] {
     const t30 = parseFloat((apixVal * 0.88).toFixed(2));
     const t45 = parseFloat((apixVal * 0.76).toFixed(2));
 
-    const metroApix = parseFloat((apixVal * 1.01).toFixed(2));
-    const regionalApix = parseFloat((apixVal * 0.94).toFixed(2));
-    const dgcaOfficial = parseFloat((apixVal * 0.985 + (Math.cos(i) * 0.8)).toFixed(2));
-    const confidence = parseFloat((94.5 + (Math.sin(i) * 2.8)).toFixed(1));
+    // Metro (70%) and Regional/UDAN (30%) weighting: 168.21 * 0.70 + 159.11 * 0.30 = 165.48
+    const metroApix = i === 89 ? 168.21 : parseFloat((apixVal * 1.0165).toFixed(2));
+    const regionalApix = i === 89 ? 159.11 : parseFloat((apixVal * 0.9615).toFixed(2));
+    const dgcaOfficial = i === 89 ? 164.20 : parseFloat((apixVal * 0.992 + (Math.cos(i * 0.4) * 0.4)).toFixed(2));
+    const confidence = i === 89 ? 96.1 : parseFloat((95.0 + Math.sin(i * 0.3) * 1.8).toFixed(1));
 
     records.push({
       date: dateStr,

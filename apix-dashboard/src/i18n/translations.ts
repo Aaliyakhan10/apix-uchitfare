@@ -101,6 +101,33 @@ export interface Translations {
   // Government Tips / Notes
   govNoteTitle: string;
   govNoteContent: string;
+
+  // 10-Min Auto Cadence & One-Click Master Flow
+  dataFreshnessLabel: string;
+  dataFreshnessTime: string;
+  nextSyncCountdown: string;
+  autoDaemonMode: string;
+  autoDaemonToggle: string;
+  oneClickFlowBtn: string;
+  oneClickFlowRunning: string;
+  oneClickFlowModalTitle: string;
+  oneClickFlowModalDesc: string;
+
+  // Passenger Class Stratification
+  passengerClassTitle: string;
+  passengerClassDesc: string;
+  classEconomyTitle: string;
+  classPremiumTitle: string;
+  classBusinessTitle: string;
+  classConcessionalTitle: string;
+  surgeDisparityTitle: string;
+  surgeDisparityDesc: string;
+
+  // 30-Day DGCA Backtesting
+  backtest30DayTitle: string;
+  backtest30DayDesc: string;
+  backtest30DayPill: string;
+  backtest90DayPill: string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -195,7 +222,31 @@ export const translations: Record<Language, Translations> = {
     scraperTriggeringBtn: "Running Pipeline (Scrape -> Clean -> Local LLM -> APIx)...",
 
     govNoteTitle: "Guidance Note for Statistical Officers",
-    govNoteContent: "APIx uses a DGCA traffic-weighted Laspeyres price index formula. All calculations adhere to the MoSPI Consumer Price Index (CPI) methodology."
+    govNoteContent: "APIx uses a DGCA traffic-weighted Laspeyres price index formula. All calculations adhere to the MoSPI Consumer Price Index (CPI) methodology.",
+
+    dataFreshnessLabel: "Live Automated Feed",
+    dataFreshnessTime: "Last sync",
+    nextSyncCountdown: "Next 20-min cycle in",
+    autoDaemonMode: "Autonomous MoSPI Daemon Active",
+    autoDaemonToggle: "Auto-Sync (20 min)",
+    oneClickFlowBtn: "Run One-Click Automated Sync",
+    oneClickFlowRunning: "Running Automated One-Time Flow...",
+    oneClickFlowModalTitle: "Autonomous One-Time Sync Flow",
+    oneClickFlowModalDesc: "Executing end-to-end technical sequence without manual intervention: Scraping, Multi-Class Split, 5-Stage ML Cleaning, Local LLM, APIx Index & 30-Day DGCA Backtest.",
+
+    passengerClassTitle: "Passenger Class & Economic Stratification",
+    passengerClassDesc: "Flight pricing drastically differs across passenger classes. Common citizens traveling in Economy face severe surge penalties (+51% budget impact), while Business Class demand remains inelastic.",
+    classEconomyTitle: "Economy Class (General Public)",
+    classPremiumTitle: "Premium Economy (Middle Class)",
+    classBusinessTitle: "Business Class (Corporate Executives)",
+    classConcessionalTitle: "Concessional (Students / Seniors / Defence)",
+    surgeDisparityTitle: "Airfare Surge Disparity Matrix",
+    surgeDisparityDesc: "How a ₹3,000 festive or last-minute surge disproportionately impacts the wallet of an ordinary citizen vs. a corporate traveler.",
+
+    backtest30DayTitle: "30-Day DGCA Ground-Truth Validation",
+    backtest30DayDesc: "Statistically validates automated scraping against publicly published DGCA monthly passenger yield benchmarks over the past 30 days.",
+    backtest30DayPill: "30-Day DGCA Validation Window",
+    backtest90DayPill: "Full 90-Day Trajectory"
   },
 
   hi: {
@@ -289,7 +340,31 @@ export const translations: Record<Language, Translations> = {
     scraperTriggeringBtn: "पाइपलाइन जारी है (स्क्रैप -> शुद्धिकरण -> लोकल LLM -> APIx)...",
 
     govNoteTitle: "सांख्यिकी अधिकारियों हेतु मार्गदर्शन नोट",
-    govNoteContent: "APIx नागरिक उड्डयन महानिदेशालय (DGCA) के वास्तविक यात्री भारित लास्पेरेस सूत्र पर आधारित है। सभी गणनाएं MoSPI CPI मानकों के अनुरूप हैं।"
+    govNoteContent: "APIx नागरिक उड्डयन महानिदेशालय (DGCA) के वास्तविक यात्री भारित लास्पेरेस सूत्र पर आधारित है। सभी गणनाएं MoSPI CPI मानकों के अनुरूप हैं।",
+
+    dataFreshnessLabel: "लाइव स्वचालित फीड",
+    dataFreshnessTime: "अंतिम सिंक",
+    nextSyncCountdown: "अगला 20-मिनट चक्र शेष",
+    autoDaemonMode: "स्वायत्त MoSPI पृष्ठभूमि डेमॉन सक्रिय",
+    autoDaemonToggle: "ऑटो-सिंक (20 मिनट)",
+    oneClickFlowBtn: "एक-क्लिक स्वचालित सिंक चलाएं",
+    oneClickFlowRunning: "स्वायत्त संपूर्ण प्रवाह जारी है...",
+    oneClickFlowModalTitle: "एक-क्लिक संपूर्ण स्वचालित प्रवाह",
+    oneClickFlowModalDesc: "बिना किसी मानवीय हस्तक्षेप के सभी 9 तकनीकी चरणों का निष्पादन: लाइव स्क्रैपिंग, बहु-श्रेणी विभाजन, 5-चरणीय ML शुद्धिकरण, लोकल LLM, भारित APIx सूचकांक एवं 30-दिवसीय DGCA सत्यापन।",
+
+    passengerClassTitle: "यात्री श्रेणी एवं आर्थिक स्तरीकरण",
+    passengerClassDesc: "विभिन्न श्रेणियों के यात्रियों के लिए हवाई किराए में भारी अंतर होता है। इकोनॉमी के आम नागरिक पर अंतिम समय के उछाल का भारी आर्थिक बोझ (+51%) पड़ता है, जबकि बिजनेस क्लास की मांग अप्रभावित रहती है।",
+    classEconomyTitle: "इकोनॉमी क्लास (आम नागरिक / सामान्य जन)",
+    classPremiumTitle: "प्रीमियम इकोनॉमी (मध्यम वर्ग)",
+    classBusinessTitle: "बिजनेस क्लास (कॉर्पोरेट / उच्च वर्ग)",
+    classConcessionalTitle: "रियायती वर्ग (छात्र / वरिष्ठ नागरिक / रक्षा कर्मी)",
+    surgeDisparityTitle: "किराया उछाल असमानता प्रभाव मैट्रिक्स",
+    surgeDisparityDesc: "त्योहारी सीजन या अंतिम समय में ₹3,000 की सामान्य मूल्य वृद्धि आम नागरिक के टिकट बजट को कैसे प्रभावित करती है बनाम कॉर्पोरेट यात्री।",
+
+    backtest30DayTitle: "30-दिवसीय DGCA आधिकारिक सत्यापन",
+    backtest30DayDesc: "विगत 30 दिनों के प्रकाशित आधिकारिक DGCA यात्री प्रतिफल बेंचमार्क के विरुद्ध स्वचालित वेब स्क्रैपिंग का सांख्यिकीय सत्यापन।",
+    backtest30DayPill: "30-दिवसीय DGCA सत्यापन विंडो",
+    backtest90DayPill: "पूर्ण 90-दिवसीय प्रक्षेपवक्र"
   },
 
   mr: {
@@ -383,6 +458,30 @@ export const translations: Record<Language, Translations> = {
     scraperTriggeringBtn: "पाइपलाइन सुरू आहे (स्क्रॅप -> शुद्धीकरण -> स्थानिक LLM -> APIx)...",
 
     govNoteTitle: "सांख्यिकी अधिकाऱ्यांसाठी मार्गदर्शन टीप",
-    govNoteContent: "APIx नागरी विमान वाहतूक महासंचालनालयाच्या (DGCA) प्रत्यक्ष प्रवासी भारित लास्पेरेस सूत्रावर आधारित आहे. सर्व गणना MoSPI CPI मानकांनुसार आहेत."
+    govNoteContent: "APIx नागरी विमान वाहतूक महासंचालनालयाच्या (DGCA) प्रत्यक्ष प्रवासी भारित लास्पेरेस सूत्रावर आधारित आहे. सर्व गणना MoSPI CPI मानकांनुसार आहेत.",
+
+    dataFreshnessLabel: "थेट स्वयंचलित फीड",
+    dataFreshnessTime: "शेवटचे सिंक",
+    nextSyncCountdown: "पुढील २०-मिनिटे चक्र शिल्लक",
+    autoDaemonMode: "स्वायत्त MoSPI पार्श्वभूमी डीमन सक्रिय",
+    autoDaemonToggle: "ऑटो-सिंक (२० मिनिटे)",
+    oneClickFlowBtn: "एक-क्लिक स्वयंचलित सिंक चालवा",
+    oneClickFlowRunning: "स्वायत्त संपूर्ण प्रवाह सुरू आहे...",
+    oneClickFlowModalTitle: "एक-क्लिक संपूर्ण स्वयंचलित प्रवाह",
+    oneClickFlowModalDesc: "मानवी हस्तक्षेपाशिवाय सर्व ९ तांत्रिक टप्प्यांची अंमलबजावणी: थेट स्क्रॅपिंग, बहु-श्रेणी विभाजन, ५-टप्प्यांचे ML शुद्धीकरण, स्थानिक LLM, भारित APIx निर्देशांक आणि ३०-दिवसीय DGCA पडताळणी.",
+
+    passengerClassTitle: "प्रवासी वर्ग आणि आर्थिक स्तरीकरण",
+    passengerClassDesc: "विमान प्रवाशांच्या वेगवेगळ्या वर्गांनुसार तिकीट दरांमध्ये प्रचंड फरक असतो. इकॉनॉमी वर्गातील सामान्य नागरिकावर शेवटच्या क्षणातील दरवाढीचा प्रचंड आर्थिक भार (+५१%) पडतो, तर बिझनेस क्लासची मागणी स्थिर राहते.",
+    classEconomyTitle: "इकॉनॉमी वर्ग (सर्वसामान्य नागरिक)",
+    classPremiumTitle: "प्रीमियम इकॉनॉमी (मध्यम वर्ग)",
+    classBusinessTitle: "बिझनेस क्लास (कॉर्पोरेट / उच्च वर्ग)",
+    classConcessionalTitle: "सवलतीचा वर्ग (विद्यार्थी / ज्येष्ठ नागरिक / सैनिक)",
+    surgeDisparityTitle: "भाडेवाढ असमानता प्रभाव मॅट्रिक्स",
+    surgeDisparityDesc: "सणासुदीच्या काळात किंवा शेवटच्या क्षणी होणारी ₹३,००० ची दरवाढ सामान्य नागरिकाच्या बजेटवर कसा परिणाम करते विरुद्ध कॉर्पोरेट प्रवासी.",
+
+    backtest30DayTitle: "३०-दिवसीय DGCA अधिकृत पडताळणी",
+    backtest30DayDesc: "गेल्या ३० दिवसांच्या प्रकाशित अधिकृत DGCA प्रवासी उत्पन्नाच्या मानकांनुसार स्वयंचलित वेब स्क्रॅपिंगची सांख्यिकीय पडताळणी.",
+    backtest30DayPill: "३०-दिवसीय DGCA पडताळणी विंडो",
+    backtest90DayPill: "पूर्ण ९०-दिवसीय प्रक्षेपवक्र"
   }
 };
