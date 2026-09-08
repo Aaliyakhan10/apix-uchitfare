@@ -1,0 +1,22 @@
+# ==============================================================================
+# APIx UchitFare - Autonomous 30-Minute Cadence Pipeline Daemon
+# ==============================================================================
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY apix_demo /app/apix_demo
+COPY daemon_30min.py /app/
+
+CMD ["python", "daemon_30min.py"]

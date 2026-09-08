@@ -8,23 +8,26 @@ export async function POST(request: Request) {
     body = { origin: "DEL", destination: "BOM", window: "T+7", source: "google_flights" };
   }
 
-  // Try connecting to live FastAPI scraper backend
-  try {
-    const backendRes = await fetch("http://127.0.0.1:8000/api/scraper/live", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(12000)
-    });
-    if (backendRes.ok) {
-      const data = await backendRes.json();
-      if (data && data.records && data.records.length > 0) {
-        return NextResponse.json(data);
+  // Try connecting to live FastAPI scraper backend across ports 8000 and 8001
+  for (const base of [process.env.NEXT_PUBLIC_API_URL, "http://127.0.0.1:8000", "http://127.0.0.1:8001"].filter(Boolean)) {
+    try {
+      const backendRes = await fetch(`${base}/api/scraper/live`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(12000)
+      });
+      if (backendRes.ok) {
+        const data = await backendRes.json();
+        if (data && data.records && data.records.length > 0) {
+          return NextResponse.json(data);
+        }
       }
+    } catch (err) {
+      // Try next port candidate
     }
-  } catch (err) {
-    // Fallback if backend is busy or timeout
   }
+
 
   // Realistic live carrier fallback
   const origin = (body as any).origin || "DEL";

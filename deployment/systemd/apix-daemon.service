@@ -1,0 +1,20 @@
+[Unit]
+Description=APIx UchitFare 30-Minute Autonomous Scraping & Indexing Daemon
+After=network.target apix-backend.service
+Wants=apix-backend.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/sih26
+Environment="PATH=/opt/sih26/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/opt/sih26/venv/bin/python daemon_30min.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

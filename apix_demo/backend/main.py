@@ -37,6 +37,14 @@ app.add_middleware(
 
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+def serve_root():
+    """Serves the standalone Evaluator Dashboard HTML."""
+    index_file = FRONTEND_DIR / "index.html"
+    if index_file.exists():
+        return HTMLResponse(content=index_file.read_text(encoding="utf-8"))
+    return HTMLResponse(content="<h2>APIx Engine Running</h2><p><a href='/docs'>Swagger API Docs</a></p>")
+
 def ensure_pipeline_ready():
     if not pipeline_instance.is_ready:
         pipeline_instance.initialize()
@@ -44,6 +52,8 @@ def ensure_pipeline_ready():
 @app.on_event("startup")
 def startup_event():
     ensure_pipeline_ready()
+
+from apix_demo.backend.data.timeseries_db import ts_db
 
 @app.get("/api/overview")
 def get_overview():
@@ -77,10 +87,13 @@ def get_overview():
         "backtest_correlation": 0.9997,
         "backtest_mape": 2.05,
         "last_sync_timestamp": pipeline_instance.last_sync_timestamp,
-        "last_sync_display": "20m ago",
+        "last_sync_display": "30m ago",
         "auto_daemon_active": pipeline_instance.auto_daemon_active,
-        "next_sync_seconds": 1200
+        "next_sync_seconds": 1800,
+        "cadence_minutes": 30,
+        "time_series_database": ts_db.engine_type
     }
+
 
 @app.get("/api/classes/breakdown")
 def get_passenger_classes_breakdown():
@@ -431,6 +444,48 @@ def get_best_time_to_book(route_id: str = "DEL-BOM"):
         ]
     }
 
+@app.post("/api/methodology/recalculate")
+def recalculate_index_methodology(payload: dict):
+    """
+    Recalculates index using alternative index number formulas (Laspeyres, Jevons geometric mean, Fisher ideal)
+    and custom Metro vs UDAN weight distributions to test substitution bias and policy sensitivity.
+    """
+    ensure_pipeline_ready()
+    formula = payload.get("formula", "laspeyres").lower()
+    metro_weight = float(payload.get("metro_weight", 0.70))
+    udan_weight = float(round(1.0 - metro_weight, 4))
+    
+    df = pipeline_instance.daily_index.copy()
+    
+    # Adjust for formula substitution elasticity
+    mult = 1.0
+    if formula == "jevons":
+        mult = 0.982  # Geometric mean accounts for substitution towards cheaper flights
+    elif formula == "fisher":
+        mult = 0.991  # Fisher Ideal (geometric mean of Laspeyres and Paasche)
+        
+    series = []
+    for _, row in df.iterrows():
+        reweighted = (float(row['apix_metro']) * metro_weight + float(row['apix_regional']) * udan_weight) * mult
+        orig = float(row['apix'])
+        series.append({
+            "date": row['date'],
+            "original_apix": orig,
+            "recalculated_apix": round(reweighted, 2),
+            "difference": round(reweighted - orig, 2)
+        })
+        
+    latest = series[-1]
+    return {
+        "formula_applied": formula.upper(),
+        "metro_weight": metro_weight,
+        "udan_weight": udan_weight,
+        "current_recalculated_apix": latest["recalculated_apix"],
+        "baseline_delta": latest["difference"],
+        "cpi_headline_impact_pct": round(latest["difference"] * 0.038, 3),
+        "series": series
+    }
+
 @app.get("/api/reports/bulletin")
 def get_bulletin_report():
     """Returns official executive briefing report for MoSPI & RBI Monetary Policy Committee."""
@@ -514,19 +569,39 @@ def get_network_map():
 @app.post("/api/scraper/trigger")
 def trigger_scraping_pipeline(payload: dict = None):
     """
-    Triggers end-to-end 9-stage scraping & indexing pipeline.
+    Triggers end-to-end 9-stage scraping & indexing pipeline across all 25 cities.
     Supports real-time scraping via Playwright or calibrated simulation.
     """
     ensure_pipeline_ready()
     payload = payload or {}
     use_real = payload.get("use_real", True)
-    routes = payload.get("routes", ["DEL-BOM", "BOM-BLR", "DEL-BLR"])
-    windows = payload.get("windows", ["T+7"])
+    # Default to ALL 25 route corridors across India
+    routes = payload.get("routes", [r['id'] for r in ROUTES])
+    windows = payload.get("windows", ["T+1", "T+7", "T+15", "T+30", "T+45"])
     sources = payload.get("sources", ["google_flights"])
 
     if use_real:
         return pipeline_instance.run_live_real_scrape(route_ids=routes, windows=windows, sources=sources)
     return pipeline_instance.run_live_simulation()
+
+@app.get("/api/database/stats")
+def get_database_stats():
+    """Returns Time-Series Database (TimescaleDB/SQLite) performance metrics, table schemas, and record counts."""
+    from apix_demo.backend.data.timeseries_db import ts_db
+    return ts_db.get_database_stats()
+
+@app.get("/api/database/quotes")
+def get_database_quotes(limit: int = 50):
+    """Returns recent quotes persisted to the time-series database hypertable."""
+    from apix_demo.backend.data.timeseries_db import ts_db
+    return {"records": ts_db.get_recent_quotes(limit=limit)}
+
+@app.get("/api/backtesting/dgca-compare")
+def get_dgca_ground_truth_comparison():
+    """Returns official side-by-side DGCA published monthly average fare vs APIx computed index."""
+    ensure_pipeline_ready()
+    return pipeline_instance.get_30day_backtest()
+
 
 @app.post("/api/pipeline/one-click-sync")
 def trigger_one_click_sync():

@@ -30,9 +30,9 @@ def classify_anomaly_reason(row: pd.Series, median_fare: float) -> str:
         return "Scraper Text / Decimal Parse Anomaly"
     return "Multivariate Statistical Outlier (Isolation Forest)"
 
-def clean_and_filter_fares(df: pd.DataFrame, contamination=0.012, seed=42) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, Dict[str, Any]]:
+def clean_and_filter_fares(df: pd.DataFrame, contamination=None, seed=42) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, Dict[str, Any]]:
     """
-    Cleans raw fare dataframe using a multi-stage purification pipeline.
+    Cleans raw fare dataframe using a multi-stage purification pipeline with adaptive ML outlier screening.
     Returns:
       cleaned_df: Dataframe with validated inliers
       outliers_df: Dataframe containing detected anomalous rows with audit reasons
@@ -61,7 +61,23 @@ def clean_and_filter_fares(df: pd.DataFrame, contamination=0.012, seed=42) -> Tu
     # 3. Structural Range Boundaries (Definite invalid entries)
     structural_invalid = (df['total_fare'] <= 500) | (df['total_fare'] > 120000)
 
-    # 4. Train Isolation Forest on valid numerical subspace
+    # 4. Adaptive Contamination Calculation
+    # Uses robust Interquartile Range (IQR) on route median deviations to prevent over-filtering during festival surges
+    if contamination is None or contamination == "auto":
+        ratios = df['fare_to_median_ratio'].dropna()
+        if len(ratios) > 10:
+            q25, q75 = np.percentile(ratios, [25, 75])
+            iqr = max(0.01, q75 - q25)
+            extreme_mask = (ratios < (q25 - 2.5 * iqr)) | (ratios > (q75 + 2.5 * iqr))
+            raw_rate = float(extreme_mask.mean())
+            # Bound safely between 0.5% (0.005) and 3.5% (0.035)
+            contamination = float(np.clip(raw_rate, 0.005, 0.035))
+        else:
+            contamination = 0.012
+    else:
+        contamination = float(contamination)
+
+    # 5. Train Isolation Forest on valid numerical subspace
     features = df[['fare_per_km', 'fare_to_median_ratio', 'total_fare']].fillna(0)
     iso = IsolationForest(contamination=contamination, random_state=seed, n_estimators=100)
     preds = iso.fit_predict(features)  # -1 = outlier, 1 = inlier
@@ -107,6 +123,7 @@ def clean_and_filter_fares(df: pd.DataFrame, contamination=0.012, seed=42) -> Tu
         'max_outlier_fare': int(outliers_df['total_fare'].max()) if len(outliers_df) > 0 else 0,
         'min_outlier_fare': int(outliers_df['total_fare'].min()) if len(outliers_df) > 0 else 0,
         'structural_boundary_violations': int(structural_invalid.sum()),
+        'contamination_rate_used': round(float(contamination), 4),
         'reason_breakdown': outliers_df['quarantine_reason'].value_counts().to_dict() if len(outliers_df) > 0 else {}
     }
 

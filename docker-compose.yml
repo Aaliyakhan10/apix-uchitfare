@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # 1. FastAPI REST Backend & Time-Series Engine
+  # ============================================================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: apix-backend
+    restart: always
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - timeseries_data:/app
+    networks:
+      - apix-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/api/database/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ============================================================================
+  # 2. Autonomous 30-Minute Cadence Scraping & ML Index Daemon
+  # ============================================================================
+  daemon:
+    build:
+      context: .
+      dockerfile: Dockerfile.daemon
+    container_name: apix-daemon
+    restart: always
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - timeseries_data:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - apix-network
+
+  # ============================================================================
+  # 3. Next.js 16 Web Dashboard
+  # ============================================================================
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:8001
+    container_name: apix-frontend
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:8001
+    depends_on:
+      - backend
+    networks:
+      - apix-network
+
+volumes:
+  timeseries_data:
+    driver: local
+
+networks:
+  apix-network:
+    driver: bridge

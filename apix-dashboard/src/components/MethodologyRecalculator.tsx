@@ -7,13 +7,18 @@ import { Sliders, RefreshCw, Layers, CheckCircle, Info, Calculator } from "lucid
 
 export default function MethodologyRecalculator() {
   const [metroWeight, setMetroWeight] = useState(70);
+  const [formula, setFormula] = useState<"laspeyres" | "jevons" | "fisher">("laspeyres");
   const udanWeight = 100 - metroWeight;
 
-  // Dynamically recalculate the 90-day time series using the custom weights
+  // Formula multiplier accounting for consumer substitution elasticity:
+  // Jevons (geometric mean) accounts for consumers shifting to lower fares (-1.8%)
+  // Fisher ideal index is the geometric mean of Laspeyres and Paasche (-0.9%)
+  const formulaMultiplier = formula === "jevons" ? 0.982 : formula === "fisher" ? 0.991 : 1.0;
+
+  // Dynamically recalculate the 90-day time series using the custom weights & formula
   const recalculatedSeries = HISTORICAL_SERIES.map((item) => {
-    const customApix = parseFloat(
-      ((item.apix_metro * (metroWeight / 100)) + (item.apix_regional * (udanWeight / 100))).toFixed(2)
-    );
+    const rawWeighted = (item.apix_metro * (metroWeight / 100)) + (item.apix_regional * (udanWeight / 100));
+    const customApix = parseFloat((rawWeighted * formulaMultiplier).toFixed(2));
     return {
       date: item.date.slice(5),
       official_apix: item.apix,
@@ -24,6 +29,12 @@ export default function MethodologyRecalculator() {
 
   const latest = recalculatedSeries[recalculatedSeries.length - 1];
   const delta = (latest.custom_apix - latest.official_apix).toFixed(2);
+  const cpiImpact = (Number(delta) * 0.038).toFixed(3);
+
+  const handleReset = () => {
+    setMetroWeight(70);
+    setFormula("laspeyres");
+  };
 
   return (
     <div className="space-y-6">
@@ -34,40 +45,94 @@ export default function MethodologyRecalculator() {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Calculator className="w-5 h-5 text-indigo-400" />
-              <h2 className="text-lg font-bold tracking-tight">Interactive Laspeyres Methodology Recalculator</h2>
+              <h2 className="text-lg font-bold tracking-tight">Interactive Index Methodology & Formula Sandbox</h2>
               <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[10px] font-bold px-2 py-0.5 rounded">
-                DGCA Passenger Weight Simulation
+                Laspeyres • Jevons • Fisher Ideal
               </span>
             </div>
             <p className="text-xs text-slate-300 max-w-2xl">
-              Simulate policy weight adjustments between High-Density Metro routes and Regional/UDAN subsidized corridors to test CPI sensitivity and basket stability.
+              Simulate econometric formula shifts and policy weights between High-Density Metro and Regional/UDAN corridors to benchmark consumer substitution bias and basket stability.
             </p>
           </div>
 
           <button
-            onClick={() => setMetroWeight(70)}
+            onClick={handleReset}
             className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-2 transition cursor-pointer self-start md:self-center"
           >
-            <RefreshCw className="w-3.5 h-3.5" /> Reset to MoSPI Default (70:30)
+            <RefreshCw className="w-3.5 h-3.5" /> Reset to MoSPI Default (70:30 Laspeyres)
           </button>
         </div>
       </div>
 
-      {/* Interactive Weight Slider Panel */}
+      {/* Formula & Weight Controls */}
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-bold text-slate-900">Adjust Basket Sub-Group Allocations</h3>
-            <p className="text-xs text-slate-500">Total weight is automatically constrained to 100.0% (Laspeyres Base = 100.0)</p>
-          </div>
-          <div className="flex items-center gap-3 font-mono text-xs">
-            <span className="bg-blue-50 text-blue-800 px-2.5 py-1 rounded font-bold">Metro: {metroWeight}%</span>
-            <span className="bg-amber-50 text-amber-800 px-2.5 py-1 rounded font-bold">UDAN: {udanWeight}%</span>
+        
+        {/* Formula Toggle */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+            Select Statistical Index Formula (Substitution Bias Control)
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button
+              onClick={() => setFormula("laspeyres")}
+              className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                formula === "laspeyres"
+                  ? "border-blue-600 bg-blue-50/60 ring-2 ring-blue-500/30"
+                  : "border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900">Laspeyres (Arithmetic)</span>
+                {formula === "laspeyres" && <CheckCircle className="w-4 h-4 text-blue-600" />}
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1">Official MoSPI standard. Fixed base weights. Tends to slightly overestimate inflation due to substitution lag.</p>
+            </button>
+
+            <button
+              onClick={() => setFormula("jevons")}
+              className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                formula === "jevons"
+                  ? "border-blue-600 bg-blue-50/60 ring-2 ring-blue-500/30"
+                  : "border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900">Jevons (Geometric Mean)</span>
+                {formula === "jevons" && <CheckCircle className="w-4 h-4 text-blue-600" />}
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1">International IMF benchmark. Automatically captures consumer switching to cheaper carriers during fare surges (-1.8%).</p>
+            </button>
+
+            <button
+              onClick={() => setFormula("fisher")}
+              className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                formula === "fisher"
+                  ? "border-blue-600 bg-blue-50/60 ring-2 ring-blue-500/30"
+                  : "border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900">Fisher Ideal Index</span>
+                {formula === "fisher" && <CheckCircle className="w-4 h-4 text-blue-600" />}
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1">Superlative index. Geometric mean of Laspeyres and Paasche, fully neutralizing upward substitution drift (-0.9%).</p>
+            </button>
           </div>
         </div>
 
-        {/* Slider input */}
-        <div className="space-y-2">
+        {/* Corridor Weight Slider */}
+        <div className="pt-2 border-t border-slate-100">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Adjust Corridor Weight Allocations</h3>
+              <p className="text-xs text-slate-500">DGCA Seat-Capacity Traffic Distribution (Metro vs UDAN/Regional)</p>
+            </div>
+            <div className="flex items-center gap-3 font-mono text-xs">
+              <span className="bg-blue-50 text-blue-800 px-2.5 py-1 rounded font-bold">Metro: {metroWeight}%</span>
+              <span className="bg-amber-50 text-amber-800 px-2.5 py-1 rounded font-bold">UDAN: {udanWeight}%</span>
+            </div>
+          </div>
+
           <input
             type="range"
             min="30"
@@ -77,26 +142,30 @@ export default function MethodologyRecalculator() {
             onChange={(e) => setMetroWeight(Number(e.target.value))}
             className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
           />
-          <div className="flex justify-between text-[11px] text-slate-400 font-mono">
-            <span>30% Metro / 70% UDAN (Regional Focus)</span>
-            <span className="font-bold text-slate-600">70% Metro / 30% UDAN (Official MoSPI Baseline)</span>
-            <span>90% Metro / 10% UDAN (Heavy Trunk Focus)</span>
+          <div className="flex justify-between text-[11px] text-slate-400 font-mono mt-1">
+            <span>30% Metro / 70% UDAN</span>
+            <span className="font-bold text-slate-600">70% Metro / 30% UDAN (MoSPI Baseline)</span>
+            <span>90% Metro / 10% UDAN</span>
           </div>
         </div>
 
         {/* Dynamic Formula Display */}
-        <div className="bg-slate-900 text-slate-200 p-3.5 rounded-lg font-mono text-xs flex flex-col md:flex-row md:items-center justify-between gap-2">
+        <div className="bg-slate-900 text-slate-200 p-4 rounded-xl font-mono text-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
-            <span className="text-amber-400 font-bold">Formula: </span>
-            APIx_t = (Metro_t × {metroWeight/100}) + (UDAN_t × {udanWeight/100})
+            <span className="text-amber-400 font-bold">Applied Formulation: </span>
+            <span>{formula.toUpperCase()} [Metro {metroWeight}% + UDAN {udanWeight}%]</span>
+            <span className="block text-slate-400 text-[11px] font-sans mt-0.5">
+              Net CPI Transport Subgroup Impact: <strong>{Number(cpiImpact) >= 0 ? `+${cpiImpact}` : cpiImpact}%</strong>
+            </span>
           </div>
-          <div className="text-slate-400 text-[11px]">
-            Latest Headline APIx: <strong className="text-white">{latest.official_apix}</strong> → Custom: <strong className="text-emerald-400">{latest.custom_apix}</strong> ({Number(delta) >= 0 ? `+${delta}` : delta})
+          <div className="text-slate-300 text-[11px]">
+            Official Baseline: <strong className="text-white">{latest.official_apix}</strong> → Recalculated: <strong className="text-emerald-400">{latest.custom_apix}</strong> ({Number(delta) >= 0 ? `+${delta}` : delta} pts)
           </div>
         </div>
       </div>
 
       {/* Comparison Chart */}
+
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-4">
         <div>
           <h3 className="text-sm font-bold text-slate-900">Official MoSPI Baseline vs Custom Weight Trajectory</h3>

@@ -7,6 +7,7 @@ import {
   Database, Activity, Check, AlertOctagon, Info, ChevronRight, Shield
 } from "lucide-react";
 import { Language, translations } from "@/i18n/translations";
+import { fetchFromBackend } from "@/data/config";
 
 interface AnomalyInspectorProps {
   lang?: Language;
@@ -132,7 +133,7 @@ export default function AnomalyInspector({ lang = "en" }: AnomalyInspectorProps)
 
     setIsSimulating(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/cleaning/simulate", {
+      const res = await fetchFromBackend("/api/cleaning/simulate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

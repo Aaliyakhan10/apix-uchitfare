@@ -3,21 +3,24 @@ import { NextResponse } from "next/server";
 export async function POST() {
   const timestamp = new Date().toTimeString().slice(0, 8);
   
-  // Try connecting to live FastAPI scraper backend first
-  try {
-    const backendRes = await fetch("http://127.0.0.1:8000/api/scraper/trigger", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ use_real: true, routes: ["DEL-BOM", "BOM-BLR", "DEL-BLR"] }),
-      signal: AbortSignal.timeout(6000)
-    });
-    if (backendRes.ok) {
-      const data = await backendRes.json();
-      return NextResponse.json(data);
+  // Try connecting to live FastAPI scraper backend across ports 8000 and 8001
+  for (const base of [process.env.NEXT_PUBLIC_API_URL, "http://127.0.0.1:8000", "http://127.0.0.1:8001"].filter(Boolean)) {
+    try {
+      const backendRes = await fetch(`${base}/api/scraper/trigger`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ use_real: true }),
+        signal: AbortSignal.timeout(8000)
+      });
+      if (backendRes.ok) {
+        const data = await backendRes.json();
+        return NextResponse.json(data);
+      }
+    } catch (err) {
+      // Try next port candidate
     }
-  } catch (err) {
-    // Backend offline or timeout -> proceed with calibrated fallback
   }
+
 
   return NextResponse.json({
     target_date: "2026-09-06",
