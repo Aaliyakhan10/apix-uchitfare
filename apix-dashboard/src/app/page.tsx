@@ -5,7 +5,7 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
 } from "recharts";
 import {
-  TrendingUp, Activity, Plane, Database, Clock, ShieldCheck,
+  TrendingUp, Activity, Plane, Database, Clock, ShieldCheck, ShieldAlert, AlertTriangle, Scale,
   Download, Layers, MapPin, ExternalLink, RefreshCw, Eye, Zap, Award, Sliders, X
 } from "lucide-react";
 
@@ -14,6 +14,7 @@ import { HISTORICAL_SERIES, ROUTE_SUMMARIES } from "@/data/mockData";
 
 // Sub-Components
 import LiveAirlineInspector from "@/components/LiveAirlineInspector";
+import CartelRadar from "@/components/CartelRadar";
 import LiveIndexCalculator from "@/components/LiveIndexCalculator";
 import WhatIsThisModal from "@/components/WhatIsThisModal";
 import { Language, translations } from "@/i18n/translations";
@@ -30,6 +31,128 @@ export default function DashboardPage() {
   const [activeAuditorRoute, setActiveAuditorRoute] = useState<string>("DEL-BOM");
 
   // Dynamic Live State from Backend API
+  const [flaggedAlerts, setFlaggedAlerts] = useState<any[]>([
+    {
+      route_id: "BOM-IXU",
+      origin: "Mumbai",
+      destination: "Aurangabad",
+      category: "Regional/UDAN",
+      hhi: 10000,
+      severity: "HIGH",
+      dominant_carrier: "IndiGo",
+      dominant_share_pct: 100.0,
+      fare_per_km: 17.65,
+      benchmark_fare_per_km: 6.84,
+      markup_percent: 158.0,
+      reason: "Route exhibits pure monopoly (HHI 10,000) with IndiGo controlling 100% capacity. Fare of ₹17.65/km is 158% above distance benchmark.",
+      recommended_action: "Immediate notice under Section 3(4) of Competition Act / DGCA Airfare Monitoring Cell Review."
+    },
+    {
+      route_id: "DEL-DED",
+      origin: "Delhi",
+      destination: "Dehradun",
+      category: "Regional/UDAN",
+      hhi: 5001,
+      severity: "HIGH",
+      dominant_carrier: "Alliance Air",
+      dominant_share_pct: 50.1,
+      fare_per_km: 18.25,
+      benchmark_fare_per_km: 6.84,
+      markup_percent: 167.0,
+      reason: "Route exhibits severe duopoly concentration (HHI 5,001). Fare of ₹18.25/km is 167% above regional benchmark.",
+      recommended_action: "Issue notice under Section 3(4) of Competition Act."
+    },
+    {
+      route_id: "DEL-DHM",
+      origin: "Delhi",
+      destination: "Dharamshala",
+      category: "Regional/UDAN",
+      hhi: 5001,
+      severity: "HIGH",
+      dominant_carrier: "SpiceJet",
+      dominant_share_pct: 50.1,
+      fare_per_km: 17.84,
+      benchmark_fare_per_km: 6.84,
+      markup_percent: 161.0,
+      reason: "Route exhibits severe market concentration (HHI 5,001). High markup over distance benchmark.",
+      recommended_action: "DGCA Airfare Monitoring Cell Inquiry."
+    },
+    {
+      route_id: "DEL-IXL",
+      origin: "Delhi",
+      destination: "Leh",
+      category: "Regional/UDAN",
+      hhi: 3334,
+      severity: "HIGH",
+      dominant_carrier: "IndiGo",
+      dominant_share_pct: 45.2,
+      fare_per_km: 14.12,
+      benchmark_fare_per_km: 6.84,
+      markup_percent: 106.0,
+      reason: "High concentration (HHI 3,334) on high-altitude corridor. Fare ₹14.12/km is +106% above baseline.",
+      recommended_action: "Seasonal tariff ceiling review."
+    },
+    {
+      route_id: "CCU-IXB",
+      origin: "Kolkata",
+      destination: "Bagdogra",
+      category: "Regional/UDAN",
+      hhi: 3333,
+      severity: "MEDIUM",
+      dominant_carrier: "SpiceJet",
+      dominant_share_pct: 42.0,
+      fare_per_km: 9.80,
+      benchmark_fare_per_km: 6.84,
+      markup_percent: 43.0,
+      reason: "Concentration HHI 3,333. Fare ₹9.80/km exceeds regional benchmark by 43%.",
+      recommended_action: "DGCA Tariff Monitoring."
+    },
+    {
+      route_id: "BOM-HYD",
+      origin: "Mumbai",
+      destination: "Hyderabad",
+      category: "Metro",
+      hhi: 3333,
+      severity: "MEDIUM",
+      dominant_carrier: "Air India",
+      dominant_share_pct: 40.5,
+      fare_per_km: 6.88,
+      benchmark_fare_per_km: 4.71,
+      markup_percent: 46.0,
+      reason: "Trunk concentration (HHI 3,333) with Air India + IndiGo holding 85%+. Fare is 46% above metro average.",
+      recommended_action: "CCI Section 3(3) parallel pricing audit."
+    },
+    {
+      route_id: "BLR-HYD",
+      origin: "Bengaluru",
+      destination: "Hyderabad",
+      category: "Metro",
+      hhi: 2501,
+      severity: "MEDIUM",
+      dominant_carrier: "IndiGo",
+      dominant_share_pct: 38.0,
+      fare_per_km: 6.65,
+      benchmark_fare_per_km: 4.71,
+      markup_percent: 41.0,
+      reason: "High concentration (HHI 2,501) on short-haul metro hop. Fare is 41% above distance benchmark.",
+      recommended_action: "Regulatory pricing review."
+    },
+    {
+      route_id: "BOM-GOI",
+      origin: "Mumbai",
+      destination: "Goa",
+      category: "Metro",
+      hhi: 2500,
+      severity: "MEDIUM",
+      dominant_carrier: "Akasa Air",
+      dominant_share_pct: 35.0,
+      fare_per_km: 6.20,
+      benchmark_fare_per_km: 4.71,
+      markup_percent: 32.0,
+      reason: "Concentration HHI 2,500. Leisure corridor surge pricing without proportionate cost variance.",
+      recommended_action: "Weekend surge cap advisement."
+    }
+  ]);
   const [apixOverview, setApixOverview] = useState<any>({
     current_apix: 165.48,
     base_period_apix: 100.0,
@@ -54,10 +177,11 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchLiveBackendData() {
       try {
-        const [overviewRes, routesRes, historyRes] = await Promise.all([
+        const [overviewRes, routesRes, historyRes, flaggedRes] = await Promise.all([
           fetch("http://127.0.0.1:8000/api/overview").catch(() => null),
           fetch("http://127.0.0.1:8000/api/routes").catch(() => null),
-          fetch("http://127.0.0.1:8000/api/index/history").catch(() => null)
+          fetch("http://127.0.0.1:8000/api/index/history").catch(() => null),
+          fetch("http://127.0.0.1:8000/api/routes/flagged").catch(() => null)
         ]);
 
         if (overviewRes && overviewRes.ok) {
@@ -76,6 +200,13 @@ export default function DashboardPage() {
           const historyJson = await historyRes.json();
           if (Array.isArray(historyJson) && historyJson.length > 0) {
             setHistoryData(historyJson);
+          }
+        }
+
+        if (flaggedRes && flaggedRes.ok) {
+          const flaggedJson = await flaggedRes.json();
+          if (Array.isArray(flaggedJson) && flaggedJson.length > 0) {
+            setFlaggedAlerts(flaggedJson);
           }
         }
       } catch (err) {
@@ -535,14 +666,14 @@ export default function DashboardPage() {
 
           <button
             onClick={() => setActiveTab("routes")}
-            className={`flex-1 min-w-[200px] py-3 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition cursor-pointer ${
+            className={`flex-1 min-w-[220px] py-3 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition cursor-pointer ${
               activeTab === "routes"
                 ? "bg-blue-600 text-white shadow-md font-black"
                 : "text-slate-400 hover:text-white hover:bg-slate-800/80"
             }`}
           >
-            <MapPin className={`w-4 h-4 ${activeTab === "routes" ? "text-amber-300" : "text-slate-400"}`} />
-            <span>{lang === "hi" ? "3. 25 राष्ट्रीय हवाई मार्ग" : "3. 25 National Route Basket"}</span>
+            <ShieldAlert className={`w-4 h-4 ${activeTab === "routes" ? "text-amber-300" : "text-slate-400"}`} />
+            <span>{lang === "hi" ? "3. एकाधिकार, HHI एवं कार्टेल रडार (PPT चरण 7)" : "3. Monopoly & HHI Radar (PPT Step 7)"}</span>
           </button>
 
           <button
@@ -602,103 +733,284 @@ export default function DashboardPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 3: 25 NATIONAL ROUTE BASKET & COMPETITION SURVEILLANCE                */}
+        {/* TAB 3: MONOPOLY, HHI SURVEILLANCE & CARTEL RADAR (PPT STEP 7)              */}
         {/* ========================================================================= */}
         {activeTab === "routes" && (
-          <section className="bg-white rounded-2xl border-2 border-slate-200 p-6 shadow-xs space-y-4 animate-in fade-in duration-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-              <div>
-                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                  National Route Registry
+          <div className="space-y-8 animate-in fade-in duration-200">
+            
+            {/* 1. PPT STEP 7 OFFICIAL BANNER & MATHEMATICAL FORMULA CARD */}
+            <div className="bg-gradient-to-br from-slate-900 via-rose-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl border-2 border-rose-500/30 relative overflow-hidden">
+              <div className="relative z-10 space-y-5">
+                
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-rose-500/20 pb-4">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <span className="bg-rose-500 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1.5">
+                      <ShieldAlert className="w-3.5 h-3.5" />
+                      <span>SIH PPT Technical Approach • Step 7 of 7</span>
+                    </span>
+                    <span className="text-rose-200 text-xs font-medium">
+                      Statutory Anti-Profiteering Watchdog for DGCA & Competition Commission of India (CCI)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono bg-rose-950/80 border border-rose-500/40 text-rose-300 px-3 py-1 rounded-lg font-bold">
+                      Flagged Corridors: {flaggedAlerts.length} Active Risks
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                  <div className="lg:col-span-7 space-y-3">
+                    <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                      Monopoly & Overcharging Surveillance Engine
+                    </h2>
+                    <p className="text-xs text-rose-100/90 leading-relaxed">
+                      To safeguard air travellers from artificial price gouging, the APIx engine continuously monitors route-level market concentration and identifies anticompetitive fare inflation across all 25 national corridors.
+                    </p>
+                    
+                    {/* The Exact Condition from PPT */}
+                    <div className="bg-slate-950/80 border border-rose-500/40 p-3.5 rounded-2xl space-y-1.5">
+                      <div className="flex items-center gap-2 text-xs font-bold text-rose-300">
+                        <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                        <span>PPT Technical Condition for Flagging:</span>
+                      </div>
+                      <p className="text-[11px] font-mono text-slate-200 leading-relaxed">
+                        If <span className="text-amber-400 font-bold">HHI ≥ 2,500</span> (High Concentration) <span className="text-rose-400 font-bold">AND</span> <span className="text-amber-400 font-bold">Fare/Km &gt;&gt; Distance-Adjusted National Benchmark</span>:
+                        <br />
+                        ➔ Route is automatically flagged as <span className="text-rose-400 font-bold">&quot;Low Competition Risk ⚠️&quot;</span> and reported to DGCA & CCI.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right: The HHI Formula Box */}
+                  <div className="lg:col-span-5 bg-slate-950/90 border border-rose-400/30 p-5 rounded-2xl space-y-3">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-amber-400 block">
+                      Herfindahl-Hirschman Index (HHI) Formula
+                    </span>
+                    <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl text-center">
+                      <span className="font-mono text-base font-black text-rose-300 tracking-wider">
+                        HHI = ∑ (sᵢ × 100)²
+                      </span>
+                      <span className="block text-[10px] text-slate-400 mt-1">
+                        where sᵢ = Carrier i&apos;s scraped route capacity share (0.0 to 1.0)
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-[10px]">
+                      <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                        <span className="text-rose-400 font-bold block">HHI ≥ 5,000</span>
+                        <span className="text-slate-300">Monopoly / Single Dominant</span>
+                      </div>
+                      <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                        <span className="text-amber-400 font-bold block">HHI 2,500 - 4,999</span>
+                        <span className="text-slate-300">Highly Concentrated</span>
+                      </div>
+                      <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                        <span className="text-blue-400 font-bold block">HHI 1,500 - 2,499</span>
+                        <span className="text-slate-300">Moderately Concentrated</span>
+                      </div>
+                      <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                        <span className="text-emerald-400 font-bold block">HHI &lt; 1,500</span>
+                        <span className="text-slate-300">Competitive Multi-Carrier</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* 2. FLAGGED ROUTE ALERT CARDS (8 CORRIDORS UNDER DGCA/CCI SURVEILLANCE) */}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-base font-black text-slate-100 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-500" />
+                    <span>Active Overcharging & Low-Competition Corridors ({flaggedAlerts.length})</span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Routes exceeding HHI threshold (≥2,500) and pricing +25% to +167% above distance benchmark.
+                  </p>
+                </div>
+                <span className="text-xs font-mono text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1 rounded-lg self-start">
+                  Automated Flag: Low Competition Risk ⚠️
                 </span>
-                <h3 className="text-base font-black text-slate-900 mt-1 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-emerald-600" />
-                  <span>
-                    {lang === "hi" 
-                      ? "25 राष्ट्रीय हवाई मार्ग रजिस्ट्री (15 मेट्रो + 10 उड़ान)" 
-                      : "National Route Basket Registry (25 Routes: 15 Metro + 10 UDAN)"}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {flaggedAlerts.map((alert: any) => (
+                  <div 
+                    key={alert.route_id} 
+                    className="bg-slate-900/90 border-2 border-rose-500/40 rounded-2xl p-4 space-y-3 hover:border-rose-400 transition shadow-sm flex flex-col justify-between"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono font-black text-white text-sm bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
+                          {alert.route_id}
+                        </span>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${
+                          alert.severity === "HIGH" 
+                            ? "bg-rose-500/20 text-rose-300 border border-rose-500/50" 
+                            : "bg-amber-500/20 text-amber-300 border border-amber-500/50"
+                        }`}>
+                          {alert.severity} Risk
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-xs font-bold text-slate-200 block">
+                          {alert.origin} → {alert.destination}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {alert.category} Corridor
+                        </span>
+                      </div>
+
+                      <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800 space-y-1 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">HHI Index:</span>
+                          <span className="font-mono font-black text-rose-400">{alert.hhi}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Dominant:</span>
+                          <span className="font-bold text-slate-200">{alert.dominant_carrier} ({alert.dominant_share_pct}%)</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Fare / Km:</span>
+                          <span className="font-mono font-bold text-amber-300">₹{alert.fare_per_km}/km</span>
+                        </div>
+                        <div className="flex justify-between border-t border-slate-800/80 pt-1">
+                          <span className="text-slate-400">Markup vs Benchmark:</span>
+                          <span className="font-mono font-black text-rose-400">+{alert.markup_percent}%</span>
+                        </div>
+                      </div>
+
+                      <p className="text-[10px] text-slate-300 line-clamp-2">
+                        {alert.reason}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setActiveAuditorRoute(alert.route_id);
+                        setActiveTab("auditor");
+                      }}
+                      className="w-full bg-rose-950/60 hover:bg-rose-900/80 text-rose-200 border border-rose-500/40 text-[11px] font-bold py-2 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Inspect Carrier Quotes</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 3. ALGORITHMIC COLLUSION & CARTEL RADAR (CCI SECTION 3(3)) */}
+            <div className="space-y-4">
+              <div className="border-t border-slate-800 pt-6">
+                <CartelRadar />
+              </div>
+            </div>
+
+            {/* 4. COMPLETE 25 NATIONAL ROUTE BASKET REGISTRY */}
+            <div className="bg-white rounded-2xl border-2 border-slate-200 p-6 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div>
+                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                    Comprehensive National Registry
                   </span>
-                </h3>
+                  <h3 className="text-base font-black text-slate-900 mt-1 flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-emerald-600" />
+                    <span>
+                      {lang === "hi" 
+                        ? "25 राष्ट्रीय हवाई मार्ग रजिस्ट्री (15 मेट्रो + 10 उड़ान)" 
+                        : "National Route Basket Registry (25 Routes: 15 Metro + 10 UDAN)"}
+                    </span>
+                  </h3>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder={lang === "hi" ? "मार्ग या शहर खोजें..." : "Filter route or city..."}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold px-2.5 py-1.5 rounded-lg focus:outline-none cursor-pointer"
+                  >
+                    <option value="ALL">{lang === "hi" ? "सभी श्रेणियां (25)" : "All Categories (25)"}</option>
+                    <option value="Metro">{lang === "hi" ? "मेट्रो ट्रंक (15)" : "Metro Trunk Only (15)"}</option>
+                    <option value="Regional/UDAN">{lang === "hi" ? "क्षेत्रीय/उड़ान (10)" : "Regional/UDAN Only (10)"}</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder={lang === "hi" ? "मार्ग या शहर खोजें..." : "Filter route or city..."}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold px-2.5 py-1.5 rounded-lg focus:outline-none cursor-pointer"
-                >
-                  <option value="ALL">{lang === "hi" ? "सभी श्रेणियां (25)" : "All Categories (25)"}</option>
-                  <option value="Metro">{lang === "hi" ? "मेट्रो ट्रंक (15)" : "Metro Trunk Only (15)"}</option>
-                  <option value="Regional/UDAN">{lang === "hi" ? "क्षेत्रीय/उड़ान (10)" : "Regional/UDAN Only (10)"}</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase text-[10px]">
-                    <th className="py-2.5 px-3">Route Corridor</th>
-                    <th className="py-2.5 px-3">Category</th>
-                    <th className="py-2.5 px-3 text-right">Distance</th>
-                    <th className="py-2.5 px-3 text-right">Median Fare</th>
-                    <th className="py-2.5 px-3 text-right">Fare / Km</th>
-                    <th className="py-2.5 px-3 text-center">HHI Index</th>
-                    <th className="py-2.5 px-3 text-center">Status</th>
-                    <th className="py-2.5 px-3 text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredRoutes.map((r) => (
-                    <tr key={r.route_id} className="hover:bg-slate-50 transition">
-                      <td className="py-2.5 px-3 font-mono font-bold text-slate-800">
-                        {r.route_id} <span className="font-normal text-slate-500 font-sans">({r.origin} → {r.destination})</span>
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${r.category === "Metro" ? "bg-blue-100 text-blue-800" : "bg-emerald-100 text-emerald-800"}`}>
-                          {r.category}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-slate-700">{r.distance_km} km</td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold text-blue-600">₹{(r.current_median_fare || 5400).toLocaleString("en-IN")}</td>
-                      <td className="py-2.5 px-3 text-right font-mono text-slate-700">₹{r.fare_per_km}</td>
-                      <td className="py-2.5 px-3 text-center font-mono font-bold">
-                        <span className={r.hhi >= 5000 ? "text-rose-600" : r.hhi >= 2500 ? "text-amber-600" : "text-emerald-600"}>
-                          {r.hhi}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        {r.is_flagged ? (
-                          <span className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded">Flagged</span>
-                        ) : (
-                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Fair</span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <button
-                          onClick={() => {
-                            setActiveAuditorRoute(r.route_id);
-                            setActiveTab("auditor");
-                          }}
-                          className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold text-xs px-2.5 py-1 rounded-lg cursor-pointer flex items-center gap-1 mx-auto transition"
-                          title="Audit live carrier quotes for this corridor"
-                        >
-                          <Eye className="w-3.5 h-3.5" /> Inspect Fares
-                        </button>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase text-[10px]">
+                      <th className="py-2.5 px-3">Route Corridor</th>
+                      <th className="py-2.5 px-3">Category</th>
+                      <th className="py-2.5 px-3 text-right">Distance</th>
+                      <th className="py-2.5 px-3 text-right">Median Fare</th>
+                      <th className="py-2.5 px-3 text-right">Fare / Km</th>
+                      <th className="py-2.5 px-3 text-center">HHI Index</th>
+                      <th className="py-2.5 px-3 text-center">Status</th>
+                      <th className="py-2.5 px-3 text-center">Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredRoutes.map((r) => (
+                      <tr key={r.route_id} className="hover:bg-slate-50 transition">
+                        <td className="py-2.5 px-3 font-mono font-bold text-slate-800">
+                          {r.route_id} <span className="font-normal text-slate-500 font-sans">({r.origin} → {r.destination})</span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${r.category === "Metro" ? "bg-blue-100 text-blue-800" : "bg-emerald-100 text-emerald-800"}`}>
+                            {r.category}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono text-slate-700">{r.distance_km} km</td>
+                        <td className="py-2.5 px-3 text-right font-mono font-bold text-blue-600">₹{(r.current_median_fare || 5400).toLocaleString("en-IN")}</td>
+                        <td className="py-2.5 px-3 text-right font-mono text-slate-700">₹{r.fare_per_km}</td>
+                        <td className="py-2.5 px-3 text-center font-mono font-bold">
+                          <span className={r.hhi >= 5000 ? "text-rose-600 font-black" : r.hhi >= 2500 ? "text-amber-600 font-black" : "text-emerald-600"}>
+                            {r.hhi}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          {r.is_flagged ? (
+                            <span className="bg-rose-100 text-rose-800 border border-rose-300 text-[10px] font-bold px-2 py-0.5 rounded flex items-center justify-center gap-1">
+                              <AlertTriangle className="w-3 h-3 text-rose-600" /> Flagged: Low Comp.
+                            </span>
+                          ) : (
+                            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Fair Market</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <button
+                            onClick={() => {
+                              setActiveAuditorRoute(r.route_id);
+                              setActiveTab("auditor");
+                            }}
+                            className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold text-xs px-2.5 py-1 rounded-lg cursor-pointer flex items-center gap-1 mx-auto transition"
+                            title="Audit live carrier quotes for this corridor"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> Inspect Fares
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </section>
+
+          </div>
         )}
 
         {/* ========================================================================= */}
