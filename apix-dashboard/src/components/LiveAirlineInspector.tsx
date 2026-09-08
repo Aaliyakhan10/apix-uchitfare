@@ -38,15 +38,15 @@ interface Props {
   onRouteSelected?: (routeId: string) => void;
 }
 
-const CARRIER_COLORS: Record<string, { bg: string; text: string; border: string; badge: string }> = {
-  "IndiGo": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", badge: "bg-blue-600 text-white" },
-  "Air India": { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200", badge: "bg-rose-600 text-white" },
-  "Akasa Air": { bg: "bg-amber-50", text: "text-amber-800", border: "border-amber-200", badge: "bg-amber-500 text-white" },
-  "SpiceJet": { bg: "bg-red-50", text: "text-red-700", border: "border-red-200", badge: "bg-red-600 text-white" },
-  "Air India Express": { bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-200", badge: "bg-orange-600 text-white" }
+const CARRIER_CONFIG: Record<string, { shortName: string; code: string; bg: string; text: string; border: string; badge: string }> = {
+  "IndiGo": { shortName: "IndiGo", code: "6E", bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", badge: "bg-blue-600 text-white" },
+  "Air India": { shortName: "Air India", code: "AI", bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200", badge: "bg-rose-600 text-white" },
+  "Akasa Air": { shortName: "Akasa", code: "QP", bg: "bg-amber-50", text: "text-amber-800", border: "border-amber-200", badge: "bg-amber-500 text-white" },
+  "SpiceJet": { shortName: "SpiceJet", code: "SG", bg: "bg-red-50", text: "text-red-700", border: "border-red-200", badge: "bg-red-600 text-white" },
+  "Air India Express": { shortName: "AI Express", code: "IX", bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-200", badge: "bg-orange-600 text-white" }
 };
 
-const DEFAULT_COLOR = { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200", badge: "bg-slate-600 text-white" };
+const DEFAULT_CARRIER = { shortName: "Airline", code: "FL", bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200", badge: "bg-slate-600 text-white" };
 
 const ROUTES = ALL_ROUTES.map(r => ({
   id: r.id,
@@ -65,86 +65,34 @@ const WINDOWS = [
 ];
 
 const INITIAL_DEL_BOM_RECORDS: FlightRecord[] = [
-  {
-    route_id: "DEL-BOM",
-    origin: "DEL",
-    destination: "BOM",
-    date: "2026-09-15",
-    booking_window: "T+7",
-    carrier: "IndiGo",
-    flight_number: "6E-205",
-    departure_time: "06:15 AM",
-    arrival_time: "08:35 AM",
-    duration_mins: 140,
-    stops: 0,
-    is_direct: true,
-    total_fare: 6774,
-    base_fare: 4606,
-    fuel_surcharge: 1084,
-    taxes_udf: 1084,
-    currency: "INR",
-    source: "Google Flights"
-  },
-  {
-    route_id: "DEL-BOM",
-    origin: "DEL",
-    destination: "BOM",
-    date: "2026-09-15",
-    booking_window: "T+7",
-    carrier: "Akasa Air",
-    flight_number: "QP-1102",
-    departure_time: "08:40 AM",
-    arrival_time: "11:05 AM",
-    duration_mins: 145,
-    stops: 0,
-    is_direct: true,
-    total_fare: 6359,
-    base_fare: 4324,
-    fuel_surcharge: 1017,
-    taxes_udf: 1017,
-    currency: "INR",
-    source: "Google Flights"
-  },
-  {
-    route_id: "DEL-BOM",
-    origin: "DEL",
-    destination: "BOM",
-    date: "2026-09-15",
-    booking_window: "T+7",
-    carrier: "Air India",
-    flight_number: "AI-887",
-    departure_time: "11:00 AM",
-    arrival_time: "01:15 PM",
-    duration_mins: 135,
-    stops: 0,
-    is_direct: true,
-    total_fare: 7119,
-    base_fare: 4841,
-    fuel_surcharge: 1139,
-    taxes_udf: 1139,
-    currency: "INR",
-    source: "Google Flights"
-  },
-  {
-    route_id: "DEL-BOM",
-    origin: "DEL",
-    destination: "BOM",
-    date: "2026-09-15",
-    booking_window: "T+7",
-    carrier: "SpiceJet",
-    flight_number: "SG-8169",
-    departure_time: "02:30 PM",
-    arrival_time: "04:55 PM",
-    duration_mins: 145,
-    stops: 0,
-    is_direct: true,
-    total_fare: 6636,
-    base_fare: 4512,
-    fuel_surcharge: 1062,
-    taxes_udf: 1062,
-    currency: "INR",
-    source: "Google Flights"
-  }
+  // IndiGo (5 daily frequencies)
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "IndiGo", flight_number: "6E-205", departure_time: "06:15 AM", arrival_time: "08:22 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5836, base_fare: 3968, fuel_surcharge: 934, taxes_udf: 934, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "IndiGo", flight_number: "6E-5324", departure_time: "08:30 AM", arrival_time: "10:37 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 6953, base_fare: 4728, fuel_surcharge: 1112, taxes_udf: 1113, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "IndiGo", flight_number: "6E-618", departure_time: "11:45 AM", arrival_time: "01:52 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5711, base_fare: 3883, fuel_surcharge: 914, taxes_udf: 914, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "IndiGo", flight_number: "6E-2412", departure_time: "04:30 PM", arrival_time: "06:37 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 6705, base_fare: 4559, fuel_surcharge: 1073, taxes_udf: 1073, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "IndiGo", flight_number: "6E-891", departure_time: "08:15 PM", arrival_time: "10:22 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5463, base_fare: 3715, fuel_surcharge: 874, taxes_udf: 874, currency: "INR", source: "Google Flights" },
+
+  // Air India (4 daily frequencies)
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India", flight_number: "AI-887", departure_time: "07:00 AM", arrival_time: "09:07 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 6580, base_fare: 4474, fuel_surcharge: 1053, taxes_udf: 1053, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India", flight_number: "AI-665", departure_time: "10:15 AM", arrival_time: "12:22 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 7201, base_fare: 4897, fuel_surcharge: 1152, taxes_udf: 1152, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India", flight_number: "AI-806", departure_time: "03:00 PM", arrival_time: "05:07 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 6332, base_fare: 4306, fuel_surcharge: 1013, taxes_udf: 1013, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India", flight_number: "AI-624", departure_time: "07:45 PM", arrival_time: "09:52 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 7325, base_fare: 4981, fuel_surcharge: 1172, taxes_udf: 1172, currency: "INR", source: "Google Flights" },
+
+  // Akasa Air (4 daily frequencies)
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Akasa Air", flight_number: "QP-1102", departure_time: "08:00 AM", arrival_time: "10:07 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5587, base_fare: 3799, fuel_surcharge: 894, taxes_udf: 894, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Akasa Air", flight_number: "QP-1384", departure_time: "01:15 PM", arrival_time: "03:22 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5339, base_fare: 3631, fuel_surcharge: 854, taxes_udf: 854, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Akasa Air", flight_number: "QP-1402", departure_time: "05:45 PM", arrival_time: "07:52 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5836, base_fare: 3968, fuel_surcharge: 934, taxes_udf: 934, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Akasa Air", flight_number: "QP-1519", departure_time: "09:30 PM", arrival_time: "11:37 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5091, base_fare: 3462, fuel_surcharge: 815, taxes_udf: 814, currency: "INR", source: "Google Flights" },
+
+  // SpiceJet (3 daily frequencies)
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "SpiceJet", flight_number: "SG-8169", departure_time: "09:15 AM", arrival_time: "11:22 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5960, base_fare: 4053, fuel_surcharge: 954, taxes_udf: 953, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "SpiceJet", flight_number: "SG-124", departure_time: "02:45 PM", arrival_time: "04:52 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5525, base_fare: 3757, fuel_surcharge: 884, taxes_udf: 884, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "SpiceJet", flight_number: "SG-8715", departure_time: "06:45 PM", arrival_time: "08:52 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 6084, base_fare: 4137, fuel_surcharge: 973, taxes_udf: 974, currency: "INR", source: "Google Flights" },
+
+  // Air India Express (3 daily frequencies)
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India Express", flight_number: "IX-114", departure_time: "06:45 AM", arrival_time: "08:52 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5401, base_fare: 3673, fuel_surcharge: 864, taxes_udf: 864, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India Express", flight_number: "IX-482", departure_time: "12:30 PM", arrival_time: "02:37 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5215, base_fare: 3546, fuel_surcharge: 834, taxes_udf: 835, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India Express", flight_number: "IX-936", departure_time: "09:00 PM", arrival_time: "11:07 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5029, base_fare: 3420, fuel_surcharge: 805, taxes_udf: 804, currency: "INR", source: "Google Flights" }
 ];
 
 export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelected }: Props) {
@@ -207,12 +155,32 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
     fetchLiveFares(selectedRoute, selectedWindow, selectedSource);
   }, [selectedRoute, selectedWindow, selectedSource]);
 
-  const activeRouteObj = ROUTES.find(r => r.id === selectedRoute) || ROUTES[0];
+  const [sortBy, setSortBy] = useState<"price" | "time">("price");
 
-  // Filter records by carrier
-  const filteredRecords = carrierFilter === "ALL" 
+  const timeToMinutes = (timeStr?: string) => {
+    if (!timeStr) return 0;
+    const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!match) return 0;
+    let h = parseInt(match[1]);
+    const m = parseInt(match[2]);
+    const ampm = match[3].toUpperCase();
+    if (ampm === "PM" && h < 12) h += 12;
+    if (ampm === "AM" && h === 12) h = 0;
+    return h * 60 + m;
+  };
+
+  const activeRouteObj = ROUTES.find(r => r.id === selectedRoute) || ROUTES[0];
+  // Filter records by carrier (exact match avoids Air India matching Air India Express)
+  const baseFiltered = carrierFilter === "ALL" 
     ? records 
-    : records.filter(r => r.carrier.toLowerCase().includes(carrierFilter.toLowerCase()));
+    : records.filter(r => r.carrier.trim().toLowerCase() === carrierFilter.trim().toLowerCase());
+
+  const filteredRecords = [...baseFiltered].sort((a, b) => {
+    if (sortBy === "price") {
+      return a.total_fare - b.total_fare;
+    }
+    return timeToMinutes(a.departure_time) - timeToMinutes(b.departure_time);
+  });
 
   // Calculate stats
   const minFare = records.length > 0 ? Math.min(...records.map(r => r.total_fare)) : 0;
@@ -291,7 +259,10 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
             </label>
             <select
               value={selectedRoute}
-              onChange={(e) => setSelectedRoute(e.target.value)}
+              onChange={(e) => {
+                setSelectedRoute(e.target.value);
+                setCarrierFilter("ALL");
+              }}
               className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500"
             >
               {ROUTES.map(r => (
@@ -355,7 +326,7 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
 
       </div>
 
-      {/* 2. THE CRUCIAL EXPLAINABILITY CARD: WHY MANUAL SEARCHES DIFFER FROM THE INDEX */}
+      {/* 2. THE CRUCIAL EXPLAINABILITY CARD */}
       <div className="bg-amber-50/70 border-2 border-amber-300 rounded-2xl p-5 shadow-xs transition">
         <div 
           className="flex items-center justify-between cursor-pointer select-none"
@@ -475,11 +446,12 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
 
         {/* Individual Airlines */}
         {["IndiGo", "Air India", "Akasa Air", "SpiceJet", "Air India Express"].map(carrier => {
-          const cFares = records.filter(r => r.carrier.toLowerCase().includes(carrier.toLowerCase())).map(r => r.total_fare);
+          const cRecords = records.filter(r => r.carrier.trim().toLowerCase() === carrier.trim().toLowerCase());
+          const cFares = cRecords.map(r => r.total_fare);
           const cMin = cFares.length > 0 ? Math.min(...cFares) : 0;
-          const count = cFares.length;
-          const isSelected = carrierFilter.toLowerCase() === carrier.toLowerCase();
-          const col = CARRIER_COLORS[carrier] || DEFAULT_COLOR;
+          const count = cRecords.length;
+          const isSelected = carrierFilter.trim().toLowerCase() === carrier.trim().toLowerCase();
+          const cfg = CARRIER_CONFIG[carrier] || DEFAULT_CARRIER;
 
           return (
             <button
@@ -487,18 +459,21 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
               onClick={() => setCarrierFilter(isSelected ? "ALL" : carrier)}
               className={`p-3 rounded-xl border-2 text-left transition cursor-pointer ${
                 isSelected 
-                  ? `${col.bg} ${col.border} ring-2 ring-blue-500 shadow-sm` 
+                  ? `${cfg.bg} ${cfg.border} ring-2 ring-blue-500 shadow-sm` 
                   : "bg-white border-slate-200 hover:border-slate-300"
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className={`text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${col.badge}`}>
-                  {carrier.split(" ")[0]}
+                <span className={`text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${cfg.badge}`}>
+                  {cfg.code} • {cfg.shortName}
                 </span>
-                <span className="text-[10px] text-slate-500 font-bold">{count}</span>
+                <span className="text-[10px] text-slate-500 font-bold font-mono">{count}</span>
               </div>
-              <div className="text-base font-black font-mono text-slate-900 mt-1">
-                {cMin > 0 ? `₹${cMin.toLocaleString("en-IN")}` : "N/A"}
+              <div className="mt-1">
+                <span className="text-[10px] text-slate-400 font-semibold block leading-tight">Starts from</span>
+                <div className="text-base font-black font-mono text-slate-900 leading-tight">
+                  {cMin > 0 ? `₹${cMin.toLocaleString("en-IN")}` : "N/A"}
+                </div>
               </div>
               <span className="text-[10px] text-slate-500 block truncate mt-0.5">
                 {carrier}
@@ -512,7 +487,7 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
       {/* 4. FLIGHTS LIST & VERIFICATION TABLE */}
       <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-xs overflow-hidden">
         
-        {/* Table Sub-Header with View Toggle */}
+        {/* Table Sub-Header with View Toggle & Sorting */}
         <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/60">
           <div>
             <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
@@ -526,7 +501,24 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
             </p>
           </div>
 
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            {/* Sort Toggle: Cheapest First guarantees first card matches tile price */}
+            <div className="bg-slate-200 p-0.5 rounded-lg flex items-center">
+              <button
+                onClick={() => setSortBy("price")}
+                className={`px-2.5 py-1 rounded-md font-bold transition cursor-pointer ${sortBy === "price" ? "bg-white text-blue-700 shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}
+              >
+                Cheapest First
+              </button>
+              <button
+                onClick={() => setSortBy("time")}
+                className={`px-2.5 py-1 rounded-md font-bold transition cursor-pointer ${sortBy === "time" ? "bg-white text-blue-700 shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}
+              >
+                By Departure Time
+              </button>
+            </div>
+
+            {/* View Toggle */}
             <div className="bg-slate-200 p-0.5 rounded-lg flex items-center">
               <button
                 onClick={() => setViewMode("cards")}
@@ -544,24 +536,57 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
           </div>
         </div>
 
+        {/* Filter Notice when carrier is selected */}
+        {carrierFilter !== "ALL" && (
+          <div className="mx-4 mt-4 p-2.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 text-blue-950">
+              <Filter className="w-4 h-4 text-blue-600" />
+              <span>
+                Filtered by <strong className="font-bold text-blue-700">{carrierFilter}</strong>: Showing <strong>{filteredRecords.length}</strong> of <strong>{records.length}</strong> flights (Sorted by {sortBy === "price" ? "Cheapest First" : "Departure Time"})
+              </span>
+            </div>
+            <button
+              onClick={() => setCarrierFilter("ALL")}
+              className="bg-white hover:bg-slate-100 text-blue-700 font-bold text-[11px] px-2.5 py-1 rounded-lg border border-blue-300 shadow-2xs cursor-pointer transition"
+            >
+              Show All ({records.length} Flights)
+            </button>
+          </div>
+        )}
+
         {/* CARDS VIEW */}
         {viewMode === "cards" ? (
           <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {filteredRecords.map((r, idx) => {
-              const col = CARRIER_COLORS[r.carrier] || DEFAULT_COLOR;
+              const cfg = CARRIER_CONFIG[r.carrier] || DEFAULT_CARRIER;
+              const isBestInRoute = r.total_fare === minFare;
+              const isCheapestForCarrier = r.total_fare === Math.min(...records.filter(x => x.carrier === r.carrier).map(x => x.total_fare));
               const gSearchUrl = `https://www.google.com/travel/flights?q=Flights%20to%20${r.destination}%20from%20${r.origin}%20on%20${r.date}%20oneway&curr=INR&hl=en`;
 
               return (
                 <div 
                   key={idx}
-                  className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs hover:shadow-sm hover:border-blue-300 transition space-y-3 flex flex-col justify-between"
+                  className={`bg-white rounded-xl border p-4 shadow-2xs hover:shadow-sm transition space-y-3 flex flex-col justify-between ${
+                    isBestInRoute ? "border-emerald-300 ring-1 ring-emerald-400" : "border-slate-200 hover:border-blue-300"
+                  }`}
                 >
                   <div>
-                    {/* Carrier Badge & Flight Number */}
+                    {/* Carrier Badge, Status & Flight Number */}
                     <div className="flex items-center justify-between">
-                      <span className={`text-xs font-black px-2.5 py-1 rounded-md ${col.badge}`}>
-                        {r.carrier}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-xs font-black px-2.5 py-1 rounded-md ${cfg.badge}`}>
+                          {cfg.code} • {r.carrier}
+                        </span>
+                        {isBestInRoute ? (
+                          <span className="bg-emerald-500 text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded">
+                            Best Fare
+                          </span>
+                        ) : isCheapestForCarrier ? (
+                          <span className="bg-blue-100 text-blue-800 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded">
+                            Lowest {cfg.shortName}
+                          </span>
+                        ) : null}
+                      </div>
                       <span className="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
                         {r.flight_number || `FL-${idx + 101}`}
                       </span>
@@ -661,15 +686,15 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
               </thead>
               <tbody className="divide-y divide-slate-100 font-mono">
                 {filteredRecords.map((r, idx) => {
-                  const col = CARRIER_COLORS[r.carrier] || DEFAULT_COLOR;
+                  const cfg = CARRIER_CONFIG[r.carrier] || DEFAULT_CARRIER;
                   const gSearchUrl = `https://www.google.com/travel/flights?q=Flights%20to%20${r.destination}%20from%20${r.origin}%20on%20${r.date}%20oneway&curr=INR&hl=en`;
 
                   return (
                     <tr key={idx} className="hover:bg-slate-50/80 transition">
                       <td className="py-2.5 px-3 font-sans">
                         <div className="flex items-center gap-2">
-                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${col.badge}`}>
-                            {r.carrier.split(" ")[0]}
+                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${cfg.badge}`}>
+                            {cfg.code}
                           </span>
                           <span className="font-bold text-slate-800">{r.carrier}</span>
                           <span className="text-[10px] text-slate-500 font-mono font-bold">({r.flight_number || `FL-${idx+101}`})</span>

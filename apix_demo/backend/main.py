@@ -683,9 +683,47 @@ def get_scraper_sources():
             "browser_pool": "Singleton Async Shared Pool",
             "asset_blocking": "Images, Fonts, Media, Trackers Blocked (70% bandwidth cut, 3x-5x speedup)",
             "cache": "SQLite Persistent (TTL 4 hours)",
-            "concurrency": "Configurable asyncio Semaphore"
+            "concurrency": "Configurable asyncio Semaphore",
+            "captcha_solver": "Multi-Tier (ddddocr OCR + Turnstile Bypass + VLM Grounding)"
         }
     }
+
+@app.get("/api/scraper/captcha-stats")
+def get_captcha_stats():
+    """Returns multi-tier CAPTCHA resolution subsystem diagnostics and solve metrics."""
+    from apix_demo.backend.scraper.captcha_solver import default_captcha_solver
+    return default_captcha_solver.get_stats()
+
+@app.post("/api/scraper/captcha-solve")
+def test_captcha_solve(payload: dict = None):
+    """
+    Simulates or executes real-time CAPTCHA resolution.
+    Payload: {"type": "text", "text": "ABCD"} or {"type": "vlm_grid", "target": "bus", "grid_size": [3, 3]}
+    """
+    import io
+    from PIL import Image, ImageDraw
+    from apix_demo.backend.scraper.captcha_solver import default_captcha_solver
+    
+    payload = payload or {}
+    challenge_type = payload.get("type", "text")
+
+    if challenge_type == "vlm_grid":
+        target = payload.get("target", "bus")
+        grid_size = tuple(payload.get("grid_size", [3, 3]))
+        img = Image.new("RGB", (300, 300), color=(235, 240, 248))
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return default_captcha_solver.solve_semantic_visual_grid(buf.getvalue(), target_label=target, grid_size=grid_size)
+
+    # Default: text OCR
+    text_sample = payload.get("text", "K7M9")
+    img = Image.new("RGB", (130, 45), color=(255, 255, 255))
+    d = ImageDraw.Draw(img)
+    d.text((18, 12), text_sample, fill=(20, 20, 20))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return default_captcha_solver.solve_text_captcha_from_bytes(buf.getvalue())
+
 
 if __name__ == "__main__":
     import uvicorn

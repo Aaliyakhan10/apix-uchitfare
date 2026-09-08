@@ -79,20 +79,27 @@ class SkyscannerScraper:
 
                 # 3. Check for bot challenges (Akamai / Cloudflare / CAPTCHA)
                 page_content = await page.content()
-                if any(phrase in page_content.lower() for phrase in ["access denied", "pardon our interruption", "captcha", "security check", "verify you are human"]):
-                    logger.warning(f"[Skyscanner] Anti-bot challenge page detected for {route_id}.")
-                    latency = round((time.time() - start_time) * 1000, 2)
-                    return ScrapeResult(
-                        success=False,
-                        source="Skyscanner",
-                        origin=origin.upper(),
-                        destination=destination.upper(),
-                        date=date,
-                        booking_window=booking_window,
-                        records=[],
-                        error_message="Skyscanner Anti-Bot / CAPTCHA challenge encountered",
-                        latency_ms=latency
-                    )
+                if any(phrase in page_content.lower() for phrase in ["access denied", "pardon our interruption", "captcha", "security check", "verify you are human", "cf-turnstile"]):
+                    logger.warning(f"[Skyscanner] Anti-bot challenge page detected for {route_id}. Triggering multi-tier CAPTCHA solver...")
+                    from apix_demo.backend.scraper.captcha_solver import default_captcha_solver
+                    solve_res = await default_captcha_solver.detect_and_solve_page_challenge(page)
+                    if solve_res.get("solved"):
+                        logger.info(f"[Skyscanner] CAPTCHA challenge successfully resolved via {solve_res.get('tier')} in {solve_res.get('latency_ms')}ms! Proceeding to results...")
+                        await page.wait_for_timeout(2000)
+                    else:
+                        logger.warning(f"[Skyscanner] Anti-bot challenge solver could not clear page.")
+                        latency = round((time.time() - start_time) * 1000, 2)
+                        return ScrapeResult(
+                            success=False,
+                            source="Skyscanner",
+                            origin=origin.upper(),
+                            destination=destination.upper(),
+                            date=date,
+                            booking_window=booking_window,
+                            records=[],
+                            error_message="Skyscanner Anti-Bot / CAPTCHA challenge encountered (Solver exhausted)",
+                            latency_ms=latency
+                        )
 
                 # 4. Wait for flight results or cards
                 try:
