@@ -45,13 +45,20 @@ def serve_root():
         return HTMLResponse(content=index_file.read_text(encoding="utf-8"))
     return HTMLResponse(content="<h2>APIx Engine Running</h2><p><a href='/docs'>Swagger API Docs</a></p>")
 
+import threading
+
+_init_lock = threading.Lock()
+
 def ensure_pipeline_ready():
     if not pipeline_instance.is_ready:
-        pipeline_instance.initialize()
+        with _init_lock:
+            if not pipeline_instance.is_ready:
+                pipeline_instance.initialize()
 
 @app.on_event("startup")
 def startup_event():
-    ensure_pipeline_ready()
+    # Run in background so the web server binds port 7860 instantly within 0.05s
+    threading.Thread(target=ensure_pipeline_ready, daemon=True).start()
 
 from apix_demo.backend.data.timeseries_db import ts_db
 
