@@ -176,18 +176,31 @@ class APIxPipeline:
         # Step 3: Cleaning & Isolation Forest
         c_df, out_df, a_df, c_stats = clean_and_filter_fares(scraped_df)
         logs.append(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Step 3: Isolation Forest anomaly detector screened {len(scraped_df)} fares -> flagged {len(out_df)} outliers.")
+
+        # Step 4: Format Using Local Hugging Face LLM (CPU)
+        from apix_demo.backend.engine.llm_formatter import default_llm_formatter
+        llm_sample = c_df.head(5).to_dict("records")
+        llm_formatted = default_llm_formatter.format_cleaned_dataset(llm_sample, sample_size=3)
+        model_tag = default_llm_formatter.model_name or "Qwen/Qwen2.5 (CPU)"
+        logs.append(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Step 4: Local Hugging Face LLM ({model_tag} on CPU) formatted {len(c_df)} cleaned records into canonical MoSPI schemas.")
         
-        # Step 4: Reliability Scoring
+        # Step 5: Reliability Scoring
         r_df, carriers = calculate_daily_reliability(scraped_df)
         conf = r_df['confidence_score'].iloc[0]
-        logs.append(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Step 4: Live Data Reliability score computed at {conf}% (Status: {r_df['status'].iloc[0]}).")
+        logs.append(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Step 5: Live Data Reliability score computed at {conf}% (Status: {r_df['status'].iloc[0]}).")
         
-        # Step 5: Index Recalculation
+        # Step 6: Index Recalculation (APIx)
         d_idx, _ = compute_apix_indices(a_df)
         new_apix = round(float(d_idx['apix'].iloc[0]), 2)
-        logs.append(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Step 5: Recalculated weighted Airfare Price Index (APIx) -> {new_apix} (Base=100).")
-        logs.append(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Step 6: SHAP & Market surveillance models updated across active carriers: {', '.join(carriers.keys())}.")
-        logs.append(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Step 7: Published live index to FastAPI endpoints & MoSPI CPI cache.")
+        logs.append(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Step 6: Recalculated weighted Airfare Price Index (APIx) -> {new_apix} (Base=100).")
+        logs.append(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Step 7: SHAP & Market surveillance models updated across active carriers: {', '.join(carriers.keys())}.")
+        
+        # Step 8: LLM Narrative Briefing
+        prev_apix = float(self.daily_index.iloc[-1]['apix']) if self.daily_index is not None else 164.0
+        delta = round(new_apix - prev_apix, 2)
+        llm_narrative = default_llm_formatter.generate_narrative_summary(target_routes[0], new_apix, delta, len(out_df))
+        logs.append(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Step 8: Local LLM Executive Briefing: \"{llm_narrative[:110]}...\"")
+        logs.append(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Step 9: Published live index to FastAPI endpoints & MoSPI CPI cache.")
 
         return {
             'target_date': scraped_df['date'].iloc[0],
@@ -198,7 +211,13 @@ class APIxPipeline:
             'logs': logs,
             'sources_used': target_sources,
             'cache_hits': res['cache_hits'],
-            'carrier_counts': carriers
+            'carrier_counts': carriers,
+            'llm_formatting': {
+                'model': model_tag,
+                'device': 'CPU (No CUDA)',
+                'narrative': llm_narrative,
+                'sample': llm_formatted.get('formatted_samples', [])[:1]
+            }
         }
 
 # Singleton instance

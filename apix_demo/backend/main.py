@@ -163,14 +163,6 @@ def get_backtesting():
         "series": pipeline_instance.backtest_series.to_dict(orient="records")
     }
 
-@app.post("/api/scraper/trigger")
-def trigger_scraper():
-    """Triggers an interactive live scrape simulation run."""
-    ensure_pipeline_ready()
-        
-    result = pipeline_instance.run_live_simulation()
-    return result
-
 @app.get("/api/export/cpi")
 def export_cpi_dataset():
     """Exports the cleaned dataset formatted for MoSPI CPI integration."""
@@ -333,6 +325,30 @@ def simulate_fare_cleaning(payload: dict):
     raw_fare = float(payload.get("raw_fare", 5000.0))
     window = payload.get("booking_window", "T+7")
     return simulate_cleaning_decision(route_id, carrier, raw_fare, window)
+
+@app.post("/api/llm/format")
+def format_record_with_local_llm(payload: dict):
+    """
+    Formats a cleaned airfare record or dataset into canonical MoSPI JSON
+    using local Hugging Face model on CPU (No CUDA required).
+    """
+    from apix_demo.backend.engine.llm_formatter import default_llm_formatter
+    record = payload.get("record")
+    if record:
+        return default_llm_formatter.format_single_record(record)
+    
+    records = payload.get("records", [])
+    if records:
+        return default_llm_formatter.format_cleaned_dataset(records)
+    
+    # Default test record
+    sample = {
+        "route_id": payload.get("route_id", "DEL-BOM"),
+        "carrier": payload.get("carrier", "IndiGo"),
+        "total_fare": payload.get("total_fare", 6425.0),
+        "booking_window": payload.get("booking_window", "T+7")
+    }
+    return default_llm_formatter.format_single_record(sample)
 
 @app.get("/api/collusion")
 def get_collusion_watch():

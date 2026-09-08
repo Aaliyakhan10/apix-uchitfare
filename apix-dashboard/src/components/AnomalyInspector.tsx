@@ -6,8 +6,14 @@ import {
   Play, Sparkles, ArrowRight, Layers, HelpCircle, Download, RefreshCw,
   Database, Activity, Check, AlertOctagon, Info, ChevronRight, Shield
 } from "lucide-react";
+import { Language, translations } from "@/i18n/translations";
 
-export default function AnomalyInspector() {
+interface AnomalyInspectorProps {
+  lang?: Language;
+}
+
+export default function AnomalyInspector({ lang = "en" }: AnomalyInspectorProps) {
+  const t = translations[lang] || translations.en;
   const [search, setSearch] = useState("");
   const [filterReason, setFilterReason] = useState("ALL");
   const [activeStageTab, setActiveStageTab] = useState<number>(4);
@@ -50,53 +56,53 @@ export default function AnomalyInspector() {
   const pipelineStages = [
     {
       step: 1,
-      name: "1. Ingestion & Deduplication",
-      short: "Deduplication",
-      desc: "Drops identical parallel scraper quotes (same route, departure window, carrier, fare).",
+      name: t.stage1Name,
+      short: lang === "hi" ? "दोहराव निष्कासन" : lang === "mr" ? "पुनरावृत्ती निष्कासन" : "Deduplication",
+      desc: t.stage1Desc,
       metric: "100% Unique Signatures",
       tech: "MD5 Signature Hashing",
       color: "blue",
-      details: "Airlines frequently refresh inventory multiple times per hour. To prevent double-counting of stagnant quotes, our pipeline computes a composite hash of {route, date, carrier, departure_time, total_fare}. Duplicate quotes within the same scraping cycle are automatically eliminated."
+      details: lang === "hi" ? "समान एयरलाइन और समय स्लॉट के दोहराए गए किरायों को स्वचालित रूप से हटा दिया जाता है ताकि एक ही टिकट दो बार न गिना जाए।" : lang === "mr" ? "एकाच विमान कंपनीचे एकाच वेळेतील दुबार दर आपोआप वगळले जातात जेणेकरून एकाच दराची दुहेरी गणना होणार नाही." : "Airlines frequently refresh inventory multiple times per hour. Duplicate quotes within the same scraping cycle are automatically eliminated."
     },
     {
       step: 2,
-      name: "2. Physical & Boundary Checks",
-      short: "Boundary Check",
-      desc: "Filters out impossible values: non-positive prices (≤ ₹0), sub-₹500 glitches, and >₹120k ceilings.",
+      name: t.stage2Name,
+      short: lang === "hi" ? "सीमा जांच" : lang === "mr" ? "मर्यादा तपासणी" : "Boundary Check",
+      desc: t.stage2Desc,
       metric: "Zero Negative Fares",
       tech: "Deterministic Range Rules",
       color: "emerald",
-      details: "Third-party OTA portals occasionally return corrupted responses during flight search (e.g. -1 for sold out seats, or 0 when taxes fail to load). Hard boundaries guarantee that no observation violating civil aviation price floors or supersonic duration limits enters the dataset."
+      details: lang === "hi" ? "नकारात्मक दर (₹0 या कम) और ₹500 से कम के अमान्य शून्य-टैक्स किरायों को तुरंत निरस्त कर दिया जाता है।" : lang === "mr" ? "उणे दर (₹0 किंवा कमी) आणि ₹५०० पेक्षा कमीचे अमान्य दर लगेच बाद केले जातात." : "Filters out impossible values: non-positive prices (≤ ₹0), sub-₹500 glitches, and >₹120k ceilings."
     },
     {
       step: 3,
-      name: "3. Isolation Forest ML Anomaly Filter",
-      short: "Isolation Forest (ML)",
-      desc: "Unsupervised machine learning isolating multi-dimensional fare spikes and business suite leaks.",
+      name: t.stage3Name,
+      short: lang === "hi" ? "आइसोलेशन फॉरेस्ट" : lang === "mr" ? "आयसोलेशन फॉरेस्ट" : "Isolation Forest (ML)",
+      desc: t.stage3Desc,
       metric: "1.2% Outlier Rejection",
       tech: "Scikit-Learn IsolationForest",
       color: "purple",
-      details: "Trained on normalized fare-per-kilometer and price-to-median ratio across booking windows. Outliers are isolated early in decision tree space (anomaly score < 0.0). Successfully catches business class suites accidentally returned in economy queries and OCR misreads."
+      details: lang === "hi" ? "मशीन लर्निंग मॉडल इकोनॉमी बास्केट में गलती से आए बिजनेस क्लास टिकटों और OCR स्क्रैपिंग विसंगतियों को पहचानता है।" : lang === "mr" ? "मशीन लर्निंग मॉडेल इकॉनॉमी बास्केटमध्ये चुकून आलेल्या बिझनेस क्लास तिकीट आणि OCR त्रुटी ओळखते." : "Trained on normalized fare-per-kilometer and price-to-median ratio across booking windows to quarantine business class leaks."
     },
     {
       step: 4,
-      name: "4. Peer Carrier Imputation",
-      short: "Imputation & Fallback",
-      desc: "Interpolates quarantined points using robust median of peer carriers for the same route & window.",
+      name: t.stage4Name,
+      short: lang === "hi" ? "औसत प्रतिस्थापन" : lang === "mr" ? "सरासरी पुनर्स्थापना" : "Imputation & Fallback",
+      desc: t.stage4Desc,
       metric: "Zero Missing Basket Points",
       tech: "Median Imputation Engine",
       color: "amber",
-      details: "MoSPI CPI computation requires continuous price-relative chains. When an outlier record is quarantined, the engine imputes the slot with the robust median of competing carriers operating the same corridor on that day, maintaining statistical continuity."
+      details: lang === "hi" ? "अमान्य घोषित किए गए टिकटों के स्थान पर उसी मार्ग की प्रतिस्पर्धी एयरलाइनों का औसत किराया रखा जाता है ताकि सूचकांक की निरंतरता बनी रहे।" : lang === "mr" ? "अमान्य घोषित केलेल्या दरांच्या जागी त्याच मार्गावरील प्रतिस्पर्धी कंपन्यांचे सरासरी भाडे ठेवले जाते." : "Interpolates quarantined points using robust median of peer carriers for the same route & window to maintain statistical continuity."
     },
     {
       step: 5,
-      name: "5. DGCA Component Segregation",
-      short: "UDF & Tax Segregation",
-      desc: "Segregates total price into Base Fare, Fuel Surcharge, and Airport UDF / Passenger Fees.",
+      name: t.stage5Name,
+      short: lang === "hi" ? "घटक पृथक्करण" : lang === "mr" ? "घटक विभाजन" : "UDF & Tax Segregation",
+      desc: t.stage5Desc,
       metric: "68% Base / 16% Fuel / 16% UDF",
       tech: "DGCA Civil Aviation Model",
       color: "indigo",
-      details: "Official CPI requires tracking pure transport service price changes separate from statutory government airport taxes (User Development Fees and Passenger Service Fees). Segregated components feed directly into fuel shock SHAP attributions."
+      details: lang === "hi" ? "कुल किराए को मूल किराए (68%), ईंधन अधिभार (16%) और एयरपोर्ट टैक्स (16%) में विभाजित किया जाता है।" : lang === "mr" ? "एकूण भाड्याचे मूळ भाडे (68%), इंधन अधिभार (16%) आणि विमानतळ कर (16%) यात विभाजन केले जाते." : "Segregates total price into Base Fare, Fuel Surcharge, and Airport UDF / Passenger Fees."
     }
   ];
 
@@ -111,24 +117,29 @@ export default function AnomalyInspector() {
   ];
 
   const presets = [
-    { label: "Normal Economy", fare: 6400, route: "DEL-BOM", carrier: "IndiGo", window: "T+7", type: "inlier" },
-    { label: "Business Suite Leak", fare: 48500, route: "DEL-BOM", carrier: "IndiGo", window: "T+7", type: "outlier" },
-    { label: "Negative Price Glitch", fare: -150, route: "BOM-BLR", carrier: "Air India", window: "T+7", type: "outlier" },
-    { label: "Missing Base Fee (< ₹500)", fare: 290, route: "DEL-BLR", carrier: "Akasa Air", window: "T+7", type: "outlier" },
-    { label: "Flash Surge Spike", fare: 36000, route: "BOM-IXU", carrier: "IndiGo", window: "T+1", type: "outlier" }
+    { label: t.cleanPresetNormal, fare: 6400, route: "DEL-BOM", carrier: "IndiGo", window: "T+7", type: "inlier" },
+    { label: t.cleanPresetBusiness, fare: 48500, route: "DEL-BOM", carrier: "IndiGo", window: "T+7", type: "outlier" },
+    { label: t.cleanPresetNegative, fare: -150, route: "BOM-BLR", carrier: "Air India", window: "T+7", type: "outlier" },
+    { label: t.cleanPresetZero, fare: 290, route: "DEL-BLR", carrier: "Akasa Air", window: "T+7", type: "outlier" },
+    { label: t.cleanPresetSpike, fare: 36000, route: "BOM-IXU", carrier: "IndiGo", window: "T+1", type: "outlier" }
   ];
 
-  const handleSimulate = async () => {
+  const handleSimulate = async (override?: { route?: string; carrier?: string; fare?: number; window?: string }) => {
+    const route = override?.route ?? testRoute;
+    const carrier = override?.carrier ?? testCarrier;
+    const raw_fare = override?.fare ?? testFare;
+    const window = override?.window ?? testWindow;
+
     setIsSimulating(true);
     try {
       const res = await fetch("http://127.0.0.1:8000/api/cleaning/simulate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          route_id: testRoute,
-          carrier: testCarrier,
-          raw_fare: testFare,
-          booking_window: testWindow
+          route_id: route,
+          carrier: carrier,
+          raw_fare: raw_fare,
+          booking_window: window
         })
       });
 
@@ -136,16 +147,16 @@ export default function AnomalyInspector() {
         const data = await res.json();
         setSimResult(data);
       } else {
-        runClientFallbackSimulation();
+        runClientFallbackSimulation(raw_fare, route, carrier, window);
       }
     } catch (e) {
-      runClientFallbackSimulation();
+      runClientFallbackSimulation(raw_fare, route, carrier, window);
     } finally {
       setIsSimulating(false);
     }
   };
 
-  const runClientFallbackSimulation = () => {
+  const runClientFallbackSimulation = (fareVal = testFare, routeVal = testRoute, carrierVal = testCarrier, windowVal = testWindow) => {
     const isUnder = testFare <= 500;
     const isOver = testFare > 100000;
     const expected = 6200;
@@ -207,13 +218,13 @@ export default function AnomalyInspector() {
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-6 h-6 text-emerald-400" />
-              <h2 className="text-xl font-bold tracking-tight">Data Cleaning & Anomaly Purification Pipeline</h2>
+              <h2 className="text-xl font-bold tracking-tight">{t.cleanHeaderTitle}</h2>
               <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold px-2.5 py-0.5 rounded">
-                Step 3 • SIH26056 PRD Core
+                {t.cleanBadge}
               </span>
             </div>
             <p className="text-xs text-emerald-200/90 max-w-2xl leading-relaxed">
-              Purifies raw web-scraped airline prices before index computation. Automatically identifies and eliminates OCR text glitches, negative API returns, and business-suite leakages using <strong>Scikit-learn Isolation Forest</strong> to safeguard official MoSPI CPI credibility.
+              {t.cleanHeaderDesc}
             </p>
           </div>
 
@@ -240,7 +251,7 @@ export default function AnomalyInspector() {
           <div>
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <Layers className="w-4 h-4 text-blue-600" />
-              5-Stage Data Purification Architecture
+              {t.cleanStagesHeading}
             </h3>
             <p className="text-xs text-slate-500">Click any stage below to understand its mathematical logic and regulatory rationale</p>
           </div>
@@ -308,17 +319,17 @@ export default function AnomalyInspector() {
           <div>
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-blue-600" />
-              <h3 className="text-base font-bold text-slate-900">Interactive Fare Purification Sandbox</h3>
+              <h3 className="text-base font-bold text-slate-900">{t.cleanSandboxHeading}</h3>
               <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">Live Simulation</span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Submit any raw fare or click an edge-case preset to watch the 5-stage pipeline diagnose, score, and sanitize it in real time.
+              {t.cleanSandboxDesc}
             </p>
           </div>
 
           {/* Quick Presets */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-semibold text-slate-500 mr-1">Presets:</span>
+            <span className="text-[11px] font-semibold text-slate-500 mr-1">{t.cleanPresetsLabel}</span>
             {presets.map((p) => (
               <button
                 key={p.label}
@@ -327,6 +338,7 @@ export default function AnomalyInspector() {
                   setTestCarrier(p.carrier);
                   setTestWindow(p.window);
                   setTestFare(p.fare);
+                  handleSimulate({ route: p.route, carrier: p.carrier, fare: p.fare, window: p.window });
                 }}
                 className={`text-[11px] px-2.5 py-1 rounded-lg font-medium border transition cursor-pointer ${
                   testFare === p.fare && testRoute === p.route
@@ -405,7 +417,7 @@ export default function AnomalyInspector() {
 
           <div className="flex items-end">
             <button
-              onClick={handleSimulate}
+              onClick={() => handleSimulate()}
               disabled={isSimulating}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer disabled:opacity-50"
             >
@@ -414,7 +426,7 @@ export default function AnomalyInspector() {
               ) : (
                 <Play className="w-3.5 h-3.5 fill-current" />
               )}
-              <span>Purify Fare</span>
+              <span>{isSimulating ? t.simulatingBtn : t.simulateBtn}</span>
             </button>
           </div>
         </div>
