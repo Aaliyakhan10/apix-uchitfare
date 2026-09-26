@@ -127,6 +127,26 @@ class APIxPipeline:
         logs.append(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Step 7: HHI Surveillance completed: 4 routes flagged for monopoly/surge risk.")
         logs.append(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Step 8: Backtest alignment with DGCA benchmark verified (Correlation r=0.912).")
         
+        # Update in-memory state so subsequent calls reflect the new day
+        import pandas as pd
+        if self.daily_index is not None:
+            self.daily_index = pd.concat([self.daily_index, d_idx], ignore_index=True)
+        else:
+            self.daily_index = d_idx.copy()
+            
+        if self.cleaned_df is not None:
+            self.cleaned_df = pd.concat([self.cleaned_df, c_df], ignore_index=True)
+        else:
+            self.cleaned_df = c_df.copy()
+            
+        if self.reliability_df is not None:
+            self.reliability_df = pd.concat([self.reliability_df, r_df], ignore_index=True)
+        else:
+            self.reliability_df = r_df.copy()
+
+        new_metro_apix = round(float(d_idx['apix_metro'].iloc[0]), 2)
+        new_regional_apix = round(float(d_idx['apix_regional'].iloc[0]), 2)
+
         # Persist to Time-Series Database
         try:
             ts_db.record_quotes_batch(sim_df.to_dict("records"))
@@ -144,7 +164,9 @@ class APIxPipeline:
         
         return {
             'target_date': target_date,
-            'new_apix': new_apix,
+            'new_apix': round(float(new_apix), 2),
+            'new_metro_apix': new_metro_apix,
+            'new_regional_apix': new_regional_apix,
             'confidence_score': conf,
             'records_scraped': len(sim_df),
             'outliers_rejected': len(out_df),
@@ -238,8 +260,28 @@ class APIxPipeline:
         except Exception as e:
             logs.append(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] TimeSeries DB notice: {str(e)}")
 
+        # Update in-memory state
+        import pandas as pd
+        if self.daily_index is not None:
+            self.daily_index = pd.concat([self.daily_index, d_idx], ignore_index=True)
+        else:
+            self.daily_index = d_idx.copy()
+            
+        if self.cleaned_df is not None:
+            self.cleaned_df = pd.concat([self.cleaned_df, c_df], ignore_index=True)
+        else:
+            self.cleaned_df = c_df.copy()
+            
+        if self.reliability_df is not None:
+            self.reliability_df = pd.concat([self.reliability_df, r_df], ignore_index=True)
+        else:
+            self.reliability_df = r_df.copy()
+
+        new_metro_apix = round(float(d_idx['apix_metro'].iloc[0]), 2)
+        new_regional_apix = round(float(d_idx['apix_regional'].iloc[0]), 2)
+
         # Step 9: LLM Narrative Briefing
-        prev_apix = float(self.daily_index.iloc[-1]['apix']) if self.daily_index is not None else 164.0
+        prev_apix = float(self.daily_index.iloc[-2]['apix']) if self.daily_index is not None and len(self.daily_index) >= 2 else 164.0
         delta = round(new_apix - prev_apix, 2)
         llm_narrative = default_llm_formatter.generate_narrative_summary(target_routes[0], new_apix, delta, len(out_df))
         logs.append(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Step 9: Local LLM Executive Briefing: \"{llm_narrative[:110]}...\"")
@@ -248,6 +290,8 @@ class APIxPipeline:
         return {
             'target_date': scraped_df['date'].iloc[0],
             'new_apix': new_apix,
+            'new_metro_apix': new_metro_apix,
+            'new_regional_apix': new_regional_apix,
             'confidence_score': conf,
             'records_scraped': len(scraped_df),
             'outliers_rejected': len(out_df),
@@ -277,7 +321,7 @@ class APIxPipeline:
         Computes passenger-class-stratified airfare metrics and surge inequality burden
         across Economy, Premium Economy, Business Class, and Concessional categories.
         """
-        current_apix = float(self.daily_index.iloc[-1]['apix']) if self.daily_index is not None else 165.48
+        current_apix = float(self.daily_index.iloc[-1]['apix']) if self.daily_index is not None and len(self.daily_index) > 0 else 100.0
         
         classes_data = []
         for key, pinfo in PASSENGER_CLASSES.items():
@@ -361,7 +405,24 @@ class APIxPipeline:
         self.last_sync_display = "Just now"
         
         class_metrics = self.get_passenger_class_metrics()
-        calculated_apix = sim_res.get('new_apix', 165.48)
+        calculated_apix = sim_res.get('new_apix', round(float(self.daily_index.iloc[-1]['apix']), 2) if self.daily_index is not None else 0.0)
+        metro_val = sim_res.get('new_metro_apix', round(float(self.daily_index.iloc[-1]['apix_metro']), 2) if self.daily_index is not None else 0.0)
+        regional_val = sim_res.get('new_regional_apix', round(float(self.daily_index.iloc[-1]['apix_regional']), 2) if self.daily_index is not None else 0.0)
+        
+        # Compute dynamic day_change from pipeline data
+        if self.daily_index is not None and len(self.daily_index) >= 2:
+            prev_apix = float(self.daily_index.iloc[-2]['apix'])
+            day_change = round(calculated_apix - prev_apix, 2)
+        else:
+            day_change = 0.0
+        
+        # Compute dynamic reliability from pipeline data
+        if self.reliability_df is not None and len(self.reliability_df) > 0:
+            rel_conf = round(float(self.reliability_df.iloc[-1]['confidence_score']), 1)
+            rel_status = str(self.reliability_df.iloc[-1]['status'])
+        else:
+            rel_conf = sim_res.get('confidence_score', 0.0)
+            rel_status = "Unknown"
         
         return {
             "status": "SUCCESS",
@@ -371,37 +432,77 @@ class APIxPipeline:
             "data_freshness_display": "Just now",
             "next_cycle_in_seconds": 1800,
             "headline_apix": calculated_apix,
-            "confidence_score": sim_res.get('confidence_score', 96.1),
-            "records_scraped": sim_res.get('records_scraped', 342),
-            "outliers_rejected": sim_res.get('outliers_rejected', 4),
+            "confidence_score": sim_res.get('confidence_score', rel_conf),
+            "records_scraped": sim_res.get('records_scraped', 0),
+            "outliers_rejected": sim_res.get('outliers_rejected', 0),
             "passenger_classes": class_metrics["classes"],
             "new_overview": {
                 "current_apix": calculated_apix,
                 "base_period_apix": 100.0,
-                "day_change": 0.71,
+                "day_change": day_change,
                 "overall_change": round(calculated_apix - 100.0, 2),
                 "latest_date": sim_res.get('target_date', now.strftime('%Y-%m-%d')),
-                "confidence_score": sim_res.get('confidence_score', 96.1),
-                "reliability_status": "Optimal",
-                "metro_apix": 168.21,
-                "regional_apix": 159.11,
+                "confidence_score": sim_res.get('confidence_score', rel_conf),
+                "reliability_status": rel_status,
+                "metro_apix": metro_val,
+                "regional_apix": regional_val,
                 "monitored_routes_count": len(ROUTES),
-                "flagged_routes_count": len(self.flagged_alerts) if self.flagged_alerts else 8,
-                "backtest_correlation": self.backtest_30day.get('pearson_correlation', 0.9997) if self.backtest_30day else 0.9997,
-                "backtest_mape": self.backtest_30day.get('mape_percent', 2.05) if self.backtest_30day else 2.05,
+                "flagged_routes_count": len(self.flagged_alerts) if self.flagged_alerts else 0,
+                "backtest_correlation": self.backtest_30day.get('pearson_correlation', 0.0) if self.backtest_30day else 0.0,
+                "backtest_mape": self.backtest_30day.get('mape_percent', 0.0) if self.backtest_30day else 0.0,
                 "last_sync_timestamp": self.last_sync_timestamp,
                 "last_sync_display": "Just now",
                 "auto_daemon_active": True,
                 "next_sync_seconds": 1800,
-                "database_engine": ts_db.engine_type
+                "database_engine": ts_db.engine_type,
+                "booking_windows": self.get_booking_windows_summary()
             },
             "backtest_30day_summary": {
-                "pearson_correlation": self.backtest_30day.get('pearson_correlation', 0.9982) if self.backtest_30day else 0.9982,
-                "mape_percent": self.backtest_30day.get('mape_percent', 1.99) if self.backtest_30day else 1.99,
+                "pearson_correlation": self.backtest_30day.get('pearson_correlation', 0.0) if self.backtest_30day else 0.0,
+                "mape_percent": self.backtest_30day.get('mape_percent', 0.0) if self.backtest_30day else 0.0,
                 "status": "APPROVED_BY_DGCA"
             },
             "logs": logs
         }
+
+    def get_booking_windows_summary(self):
+        """Returns dynamic booking window fares and index values."""
+        if self.cleaned_df is None or self.cleaned_df.empty:
+            return {}
+        latest_date = self.cleaned_df['date'].max()
+        day_df = self.cleaned_df[self.cleaned_df['date'] == latest_date]
+        if day_df.empty:
+            day_df = self.cleaned_df
+        
+        mean_fares = day_df.groupby('booking_window')['total_fare'].mean().to_dict()
+        base_fare = mean_fares.get('T+15', 5490)
+        
+        latest_row = self.daily_index.iloc[-1].to_dict() if self.daily_index is not None and not self.daily_index.empty else {}
+        
+        configs = [
+            {"key": "T+1", "label": "T+1 (Tomorrow Surge)", "sublabel": "Last-Minute Surge"},
+            {"key": "T+7", "label": "T+7 (1-Week Normal)", "sublabel": "Near-Term Curve"},
+            {"key": "T+15", "label": "T+15 (Planned Horizon)", "sublabel": "MoSPI Base Weight (40%)"},
+            {"key": "T+30", "label": "T+30 (1-Month Advance)", "sublabel": "Advance Savings"},
+            {"key": "T+45", "label": "T+45 (Early Bird)", "sublabel": "Early Bird Discount"},
+        ]
+        
+        summary = {}
+        for cfg in configs:
+            k = cfg["key"]
+            fare = int(round(float(mean_fares.get(k, 0))))
+            apix_val = round(float(latest_row.get(f"apix_{k}", 0.0)), 2)
+            delta_pct = round(((fare - base_fare) / base_fare) * 100, 1) if base_fare > 0 else 0.0
+            summary[k] = {
+                "key": k,
+                "label": cfg["label"],
+                "sublabel": cfg["sublabel"],
+                "fare": fare,
+                "apix": apix_val,
+                "delta_pct": delta_pct
+            }
+        return summary
+
 
 
 # Singleton instance

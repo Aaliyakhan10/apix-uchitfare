@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# UchitFare dashboard
 
-## Getting Started
+The Next.js application for the **UchitFare / BitSynq SIH26056 submission demo**.
 
-First, run the development server:
+See the [project README](../README.md) for the methodology, API reference, limitations and troubleshooting, and the [submission guide](../SUBMISSION_GUIDE.md) for the evaluator walkthrough.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Run
+
+Use Node.js 22 or newer with npm. From this directory:
+
+```sh
+npm ci
+npm run build
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). The production build uses webpack. No Python backend or API keys are required; the dashboard serves synthetic sample data through its own API routes.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Develop and verify
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```sh
+npm run dev
+```
 
-## Learn More
+If Turbopack encounters a worker error, use `npm run dev -- --webpack`.
 
-To learn more about Next.js, take a look at the following resources:
+With the server running, use a second terminal in this directory:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```sh
+npm run test:demo
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The smoke test checks 25 routes across five horizons, fare totals, carrier-share and HHI consistency, time-series coverage, CSV provenance and basic page availability. Run `npm run lint` separately for static analysis; existing warnings and other legacy-code findings are not covered by the smoke test.
 
-## Deploy on Vercel
+## Key files
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| File or directory | Purpose |
+| --- | --- |
+| `src/app/page.tsx` | Main dashboard and navigation |
+| `src/app/api/` | Same-origin sample API routes |
+| `src/components/LiveAirlineInspector.tsx` | Route and booking-horizon fare explorer |
+| `src/components/LiveIndexCalculator.tsx` | Assumption-based sensitivity calculator |
+| `src/data/mockData.ts` | Reproducible history, shares and concentration examples |
+| `src/data/overview.ts` | Shared initial dashboard and overview API values |
+| `scripts/smoke-demo.mjs` | Local API verification |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The `/api/scraper/live` endpoint name is inherited from the earlier prototype; this app returns generated examples. Neither the data nor the displayed benchmark metrics establish live collection or official approval.

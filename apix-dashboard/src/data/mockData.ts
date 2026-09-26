@@ -54,9 +54,9 @@ export interface FlaggedAlert {
 export function generateHistoryData(): DayIndexRecord[] {
   const records: DayIndexRecord[] = [];
   // 90-day time series ending on current date: September 8, 2026
-  const today = new Date(2026, 8, 8); // 2026-09-08
+  const today = new Date("2026-09-08T00:00:00Z"); // 2026-09-08
   const startDate = new Date(today);
-  startDate.setDate(today.getDate() - 89); // Exactly 90 days
+  startDate.setUTCDate(today.getUTCDate() - 89); // Exactly 90 days
 
   const festivalDates: Record<string, number> = {
     "2026-06-16": 1.35, "2026-06-17": 1.88, "2026-06-18": 1.20,
@@ -69,9 +69,9 @@ export function generateHistoryData(): DayIndexRecord[] {
 
   for (let i = 0; i < 90; i++) {
     const d = new Date(startDate);
-    d.setDate(d.getDate() + i);
+    d.setUTCDate(d.getUTCDate() + i);
     const dateStr = d.toISOString().slice(0, 10);
-    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+    const isWeekend = d.getUTCDay() === 0 || d.getUTCDay() === 6;
 
     // Progression ratio from 0 to 1
     const progress = i / 89.0;
@@ -129,29 +129,24 @@ export function generateHistoryData(): DayIndexRecord[] {
 export const HISTORICAL_SERIES = generateHistoryData();
 
 export const ROUTE_SUMMARIES: RouteSummary[] = ROUTES.map((r) => {
-  const isSingleCarrier = r.typicalCarriers.length === 1;
-  const isDuopoly = r.typicalCarriers.length === 2;
   const isUdan = r.isUdan;
-
-  let hhi = isSingleCarrier ? 10000 : (isDuopoly ? 5000 : (r.typicalCarriers.length === 3 ? 3333 : 2500));
-  if (r.id === "DEL-BOM") hhi = 2240;
-  if (r.id === "BOM-BLR") hhi = 3450;
-  if (r.id === "BOM-IXU") hhi = 10000;
-  if (r.id === "DEL-SHL") hhi = 10000;
 
   const currentFare = Math.round(r.basePeriodFare * (isUdan ? 1.25 : 1.18));
   const farePerKm = parseFloat((currentFare / r.distanceKm).toFixed(2));
   const benchmarkFpk = isUdan ? 8.45 : 4.65;
   const markupRatio = parseFloat((farePerKm / benchmarkFpk).toFixed(2));
 
-  const isFlagged = (hhi >= 2500 && markupRatio >= 1.25);
 
   const carrierShares = r.typicalCarriers.map((c, i) => {
     if (r.typicalCarriers.length === 1) return { carrier: c, share: 100.0 };
     if (r.typicalCarriers.length === 2) return { carrier: c, share: i === 0 ? 62.5 : 37.5 };
     if (r.typicalCarriers.length === 3) return { carrier: c, share: i === 0 ? 45.0 : (i === 1 ? 35.0 : 20.0) };
+    if (r.typicalCarriers.length === 5) return { carrier: c, share: [36, 26, 18, 12, 8][i] };
     return { carrier: c, share: i === 0 ? 42.0 : (i === 1 ? 28.0 : (i === 2 ? 18.0 : 12.0)) };
   });
+
+  const hhi = Math.round(carrierShares.reduce((sum, carrier) => sum + carrier.share ** 2, 0));
+  const isFlagged = hhi >= 2500 && markupRatio >= 1.25;
 
   return {
     route_id: r.id,
@@ -187,8 +182,8 @@ export const FLAGGED_ALERTS: FlaggedAlert[] = ROUTE_SUMMARIES.filter(r => r.is_f
     fare_per_km: r.fare_per_km,
     benchmark_fare_per_km: r.benchmark_fare_per_km,
     markup_percent: markupPercent,
-    reason: `Route exhibits severe market concentration (HHI ${r.hhi}) with ${dominant.carrier} controlling ${dominant.share}%. Fare of ₹${r.fare_per_km}/km is ${markupPercent}% above distance benchmark.`,
-    recommended_action: "Issue notice under Section 3(4) of Competition Act / DGCA Airfare Monitoring Cell Review."
+    reason: `Synthetic scenario shows market concentration (HHI ${r.hhi}) with ${dominant.carrier} controlling ${dominant.share}%. Fare of ₹${r.fare_per_km}/km is ${markupPercent}% above distance benchmark.`,
+    recommended_action: "Review source evidence before drawing any regulatory conclusions."
   };
 });
 

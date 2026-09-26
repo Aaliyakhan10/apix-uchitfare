@@ -20,8 +20,8 @@ export default function LiveIndexCalculator({ lang }: LiveIndexCalculatorProps) 
   const udanWeight = 100 - metroWeight;
 
   // Baseline figures
-  const BASELINE_METRO = 168.20;
-  const BASELINE_REGIONAL = 159.13;
+  const BASELINE_METRO = 168.21;
+  const BASELINE_REGIONAL = 159.11;
   const BASELINE_APIX = 165.48; // Official 70:30 with 0% shock and cleaning ON
 
   // Calculation logic
@@ -60,7 +60,7 @@ export default function LiveIndexCalculator({ lang }: LiveIndexCalculatorProps) 
     const cpiSign = cpiImpact >= 0 ? "+" : "";
 
     if (lang === "hi") {
-      let text = `मेट्रो मार्गों का भार ${metroWeight}% (उड़ान: ${udanWeight}%) और ATF ईंधन में ${fuelShock >= 0 ? `+${fuelShock}` : fuelShock}% परिवर्तन करने से आधिकारिक APIx सूचकांक ${BASELINE_APIX} से बदलकर ${newApix} (${sign}${delta} अंक, ${sign}${pctChange}%) हो जाता है। इससे परिवहन उपभोक्ता मूल्य सूचकांक (CPI) पर ${cpiSign}${cpiImpact}% का सीधा प्रभाव पड़ेगा।`;
+      let text = `मेट्रो मार्गों का भार ${metroWeight}% (उड़ान: ${udanWeight}%) और ATF ईंधन में ${fuelShock >= 0 ? `+${fuelShock}` : fuelShock}% परिवर्तन करने से उदाहरण APIx सूचकांक ${BASELINE_APIX} से बदलकर ${newApix} (${sign}${delta} अंक, ${sign}${pctChange}%) हो जाता है। इससे परिवहन उपभोक्ता मूल्य सूचकांक (CPI) पर ${cpiSign}${cpiImpact}% का सीधा प्रभाव पड़ेगा।`;
       if (!cleaningEnabled) {
         text += ` ⚠️ गंभीर चेतावनी: मशीन लर्निंग शुद्धिकरण बंद होने के कारण, ₹48,500 के बिजनेस क्लास लीकेज और गलत दरों से सूचकांक में +8.65 अंकों का कृत्रिम उछाल दर्ज हुआ है!`;
       }
@@ -68,7 +68,7 @@ export default function LiveIndexCalculator({ lang }: LiveIndexCalculatorProps) 
     }
 
     if (lang === "mr") {
-      let text = `मेट्रो मार्गांचे वजन ${metroWeight}% (उडान: ${udanWeight}%) आणि ATF इंधनात ${fuelShock >= 0 ? `+${fuelShock}` : fuelShock}% बदल केल्याने अधिकृत APIx निर्देशांक ${BASELINE_APIX} वरून ${newApix} (${sign}${delta} गुण, ${sign}${pctChange}%) होतो. यामुळे राष्ट्रीय वाहतूक महागाईवर (CPI) ${cpiSign}${cpiImpact}% थेट परिणाम होईल.`;
+      let text = `मेट्रो मार्गांचे वजन ${metroWeight}% (उडान: ${udanWeight}%) आणि ATF इंधनात ${fuelShock >= 0 ? `+${fuelShock}` : fuelShock}% बदल केल्याने उदाहरण APIx निर्देशांक ${BASELINE_APIX} वरून ${newApix} (${sign}${delta} गुण, ${sign}${pctChange}%) होतो. यामुळे राष्ट्रीय वाहतूक महागाईवर (CPI) ${cpiSign}${cpiImpact}% थेट परिणाम होईल.`;
       if (!cleaningEnabled) {
         text += ` ⚠️ गंभीर इशारा: डेटा शुद्धीकरण बंद असल्याने, ₹48,500 च्या बिझनेस क्लास तिकीट गळतीमुळे निर्देशांकात +8.65 गुणांची खोटी वाढ झाली आहे!`;
       }
@@ -84,7 +84,7 @@ export default function LiveIndexCalculator({ lang }: LiveIndexCalculatorProps) 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6"><p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Sensitivity simulation: fuel share, class mix, cleaning impact and CPI weight are illustrative assumptions.</p>
       
       {/* Top Government Card Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 text-white rounded-2xl p-6 shadow-md border border-slate-800">
@@ -271,7 +271,7 @@ export default function LiveIndexCalculator({ lang }: LiveIndexCalculatorProps) 
           <div className="bg-slate-900 text-slate-200 p-3 rounded-xl font-mono text-xs flex items-center justify-between gap-2">
             <div>
               <span className="text-amber-400 font-bold">{t.calcFormulaLabel}: </span>
-              APIx = (Metro × {metroWeight}%) + (UDAN × {udanWeight}%) × [1 + 0.16 × ({fuelShock}%)]
+              APIx = [(Metro × {metroWeight}%) + (UDAN × {udanWeight}%)] × [1 + 0.16 × ({fuelShock}%)]
             </div>
           </div>
 
@@ -296,7 +296,7 @@ export default function LiveIndexCalculator({ lang }: LiveIndexCalculatorProps) 
               <div className="bg-white p-4 rounded-xl border-2 border-slate-200 text-center shadow-2xs">
                 <span className="text-xs font-black text-slate-500 block uppercase tracking-wider">{t.calcBaselineIndex}</span>
                 <span className="text-3xl sm:text-4xl font-black text-slate-900 font-mono mt-1.5 block">{BASELINE_APIX}</span>
-                <span className="text-xs text-slate-500 font-medium block mt-1">Base 2026 = 100.0</span>
+                <span className="text-xs text-slate-500 font-medium block mt-1">Base 2024 = 100.0</span>
               </div>
 
               <div className={`p-4 rounded-xl border-2 text-center shadow-2xs ${

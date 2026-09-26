@@ -9,7 +9,7 @@ export async function GET() {
       rmse: 2.41,
       correlation_target: ">= 0.85",
       mape_target: "<= 10.0%",
-      validation_status: "APPROVED",
+      validation_status: "ILLUSTRATIVE_ONLY",
       monthly_comparison: [
         { month: "2026-06", apix_computed: 114.2, dgca_official: 112.8, absolute_error: 1.4, error_pct: 1.24, status: "PASSED" },
         { month: "2026-07", apix_computed: 135.8, dgca_official: 133.4, absolute_error: 2.4, error_pct: 1.79, status: "PASSED" },

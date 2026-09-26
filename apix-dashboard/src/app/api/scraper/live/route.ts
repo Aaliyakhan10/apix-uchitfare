@@ -64,38 +64,20 @@ function timeToMinutes(timeStr: string): number {
 }
 
 export async function POST(request: Request) {
-  let body: any = {};
+  let body: Record<string, unknown> = {};
   try {
-    body = await request.json();
-  } catch (e) {
-    body = { origin: "DEL", destination: "BOM", window: "T+7", source: "google_flights" };
+    const parsed = await request.json();
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Invalid body");
+    body = parsed;
+  } catch {
+    return NextResponse.json({ error: "Expected a JSON object." }, { status: 400 });
   }
 
-  // Try connecting to live FastAPI scraper backend across ports 8000 and 8001
-  for (const base of [process.env.NEXT_PUBLIC_API_URL, "http://127.0.0.1:8000", "http://127.0.0.1:8001"].filter(Boolean)) {
-    try {
-      const backendRes = await fetch(`${base}/api/scraper/live`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(12000)
-      });
-      if (backendRes.ok) {
-        const data = await backendRes.json();
-        if (data && data.records && data.records.length > 0) {
-          return NextResponse.json(data);
-        }
-      }
-    } catch (err) {
-      // Try next port candidate
-    }
-  }
+  // Reproducible synthetic schedule for the submission demo
+  const origin = String(body?.origin || "DEL").toUpperCase();
+  const dest = String(body?.destination || "BOM").toUpperCase();
+  const bookingWindow = String(body?.window || "T+7");
 
-  // Realistic live carrier schedule generator
-  const origin = (body?.origin || "DEL").toUpperCase();
-  const dest = (body?.destination || "BOM").toUpperCase();
-  const bookingWindow = body?.window || "T+7";
-  const source = body?.source || "google_flights";
   const windowDaysMap: Record<string, number> = {
     "T+1": 1,
     "T+7": 7,
@@ -105,7 +87,7 @@ export async function POST(request: Request) {
   };
   const offsetDays = windowDaysMap[bookingWindow] || 7;
   // Live reference date: September 8, 2026
-  const todayRef = new Date(2026, 8, 8);
+  const todayRef = new Date("2026-09-08T00:00:00Z");
   const targetDate = new Date(todayRef.getTime() + offsetDays * 86400000);
   const dateStr = body?.date || targetDate.toISOString().split("T")[0];
 
@@ -114,6 +96,9 @@ export async function POST(request: Request) {
     (r.origin === origin && r.destination === dest) || 
     (r.origin === dest && r.destination === origin)
   );
+  if (!routeInfo || !Object.hasOwn(windowDaysMap, bookingWindow)) {
+    return NextResponse.json({ error: "Choose a supported route and booking window." }, { status: 400 });
+  }
   const distanceKm = routeInfo?.distanceKm || (origin === "DEL" && dest === "BOM" ? 1148 : 950);
   const basePrice = routeInfo?.basePeriodFare || (origin === "DEL" && dest === "BOM" ? 4850 : 4500);
   
@@ -130,7 +115,7 @@ export async function POST(request: Request) {
   const multiplier = multiplierMap[bookingWindow] || 1.15;
 
   // Generate complete day schedule across all carriers
-  const mockRecords = FLIGHT_SCHEDULE_TEMPLATES.map(t => {
+  const mockRecords = FLIGHT_SCHEDULE_TEMPLATES.filter(t => routeInfo.typicalCarriers.includes(t.carrier === "Air India Express" ? "AI Express" : t.carrier)).map(t => {
     const totalFare = Math.round(basePrice * multiplier * t.fareFactor);
     const baseFare = Math.round(totalFare * 0.68);
     const fuelSurcharge = Math.round(totalFare * 0.16);
@@ -155,13 +140,15 @@ export async function POST(request: Request) {
       fuel_surcharge: fuelSurcharge,
       taxes_udf: taxesUdf,
       currency: "INR",
-      source: source === "skyscanner" ? "Skyscanner India" : "Google Flights"
+      source: "Synthetic demo dataset"
     };
   }).sort((a, b) => timeToMinutes(a.departure_time) - timeToMinutes(b.departure_time));
 
   return NextResponse.json({
     success: true,
-    source: source === "skyscanner" ? "Skyscanner India" : "Google Flights",
+    data_mode: "synthetic",
+    as_of: "2026-09-08",
+    source: "Synthetic demo dataset",
     origin,
     destination: dest,
     date: dateStr,

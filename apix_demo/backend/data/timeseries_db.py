@@ -155,17 +155,17 @@ class TimeSeriesDatabase:
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             """, (
                 str(index_row.get("date", datetime.date.today().isoformat())),
-                float(index_row.get("apix", 165.48)),
-                float(index_row.get("apix_metro", 168.21)),
-                float(index_row.get("apix_regional", 159.11)),
-                float(index_row.get("apix_T+1", 260.84)),
-                float(index_row.get("apix_T+7", 188.42)),
-                float(index_row.get("apix_T+15", 165.48)),
-                float(index_row.get("apix_T+30", 142.15)),
-                float(index_row.get("apix_T+45", 125.60)),
-                float(index_row.get("apix_weekly_ma", 164.92)),
-                float(index_row.get("confidence_score", 96.1)),
-                int(index_row.get("records_count", 11250)),
+                float(index_row.get("apix", 0.0)),
+                float(index_row.get("apix_metro", 0.0)),
+                float(index_row.get("apix_regional", 0.0)),
+                float(index_row.get("apix_T+1", 0.0)),
+                float(index_row.get("apix_T+7", 0.0)),
+                float(index_row.get("apix_T+15", 0.0)),
+                float(index_row.get("apix_T+30", 0.0)),
+                float(index_row.get("apix_T+45", 0.0)),
+                float(index_row.get("apix_weekly_ma", 0.0)),
+                float(index_row.get("confidence_score", 0.0)),
+                int(index_row.get("records_count", 0)),
                 float(index_row.get("dgca_official_index", 164.20))
             ))
             conn.commit()

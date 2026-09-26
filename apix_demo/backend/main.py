@@ -71,13 +71,15 @@ def get_overview():
     prev_day = pipeline_instance.daily_index.iloc[-2]
     first_row = pipeline_instance.daily_index.iloc[0]
     
-    current_apix = 165.48
-    day_change = 0.71
-    overall_change = 65.48
-    metro_apix = 168.21
-    regional_apix = 159.11
+    current_apix = round(float(latest_row['apix']), 2)
+    day_change = round(float(latest_row['apix'] - prev_day['apix']), 2)
+    overall_change = round(float(latest_row['apix'] - first_row['apix']), 2)
+    metro_apix = round(float(latest_row['apix_metro']), 2)
+    regional_apix = round(float(latest_row['apix_regional']), 2)
     
     latest_rel = pipeline_instance.reliability_df.iloc[-1]
+    confidence_score = round(float(latest_rel['confidence_score']), 1)
+    reliability_status = str(latest_rel['status'])
     
     return {
         "current_apix": current_apix,
@@ -85,20 +87,21 @@ def get_overview():
         "day_change": day_change,
         "overall_change": overall_change,
         "latest_date": latest_row['date'],
-        "confidence_score": 96.1,
-        "reliability_status": "Optimal",
+        "confidence_score": confidence_score,
+        "reliability_status": reliability_status,
         "metro_apix": metro_apix,
         "regional_apix": regional_apix,
         "monitored_routes_count": len(ROUTES),
         "flagged_routes_count": len(pipeline_instance.flagged_alerts),
-        "backtest_correlation": 0.9997,
-        "backtest_mape": 2.05,
+        "backtest_correlation": pipeline_instance.backtest_30day.get('pearson_correlation', 0.0) if pipeline_instance.backtest_30day else (pipeline_instance.backtest_report.get('pearson_correlation', 0.0) if pipeline_instance.backtest_report else 0.0),
+        "backtest_mape": pipeline_instance.backtest_30day.get('mape_percent', 0.0) if pipeline_instance.backtest_30day else (pipeline_instance.backtest_report.get('mape_percent', 0.0) if pipeline_instance.backtest_report else 0.0),
         "last_sync_timestamp": pipeline_instance.last_sync_timestamp,
         "last_sync_display": "30m ago",
         "auto_daemon_active": pipeline_instance.auto_daemon_active,
         "next_sync_seconds": 1800,
         "cadence_minutes": 30,
-        "time_series_database": ts_db.engine_type
+        "time_series_database": ts_db.engine_type,
+        "booking_windows": pipeline_instance.get_booking_windows_summary()
     }
 
 

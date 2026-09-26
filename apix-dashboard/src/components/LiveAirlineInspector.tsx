@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Plane, ExternalLink, RefreshCw, CheckCircle2, AlertTriangle,
   Info, ArrowRight, ShieldCheck, Clock, Layers, Filter, Sparkles,
@@ -66,58 +66,54 @@ const WINDOWS = [
 
 const INITIAL_DEL_BOM_RECORDS: FlightRecord[] = [
   // IndiGo (5 daily frequencies)
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "IndiGo", flight_number: "6E-205", departure_time: "06:15 AM", arrival_time: "08:22 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5836, base_fare: 3968, fuel_surcharge: 934, taxes_udf: 934, currency: "INR", source: "Google Flights" },
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "IndiGo", flight_number: "6E-5324", departure_time: "08:30 AM", arrival_time: "10:37 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 6953, base_fare: 4728, fuel_surcharge: 1112, taxes_udf: 1113, currency: "INR", source: "Google Flights" },
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "IndiGo", flight_number: "6E-618", departure_time: "11:45 AM", arrival_time: "01:52 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5711, base_fare: 3883, fuel_surcharge: 914, taxes_udf: 914, currency: "INR", source: "Google Flights" },
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "IndiGo", flight_number: "6E-2412", departure_time: "04:30 PM", arrival_time: "06:37 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 6705, base_fare: 4559, fuel_surcharge: 1073, taxes_udf: 1073, currency: "INR", source: "Google Flights" },
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "IndiGo", flight_number: "6E-891", departure_time: "08:15 PM", arrival_time: "10:22 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5463, base_fare: 3715, fuel_surcharge: 874, taxes_udf: 874, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "IndiGo", flight_number: "6E-205", departure_time: "06:15 AM", arrival_time: "08:22 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5836, base_fare: 3968, fuel_surcharge: 934, taxes_udf: 934, currency: "INR", source: "Synthetic demo dataset" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "IndiGo", flight_number: "6E-5324", departure_time: "08:30 AM", arrival_time: "10:37 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 6953, base_fare: 4728, fuel_surcharge: 1112, taxes_udf: 1113, currency: "INR", source: "Synthetic demo dataset" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "IndiGo", flight_number: "6E-618", departure_time: "11:45 AM", arrival_time: "01:52 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5711, base_fare: 3883, fuel_surcharge: 914, taxes_udf: 914, currency: "INR", source: "Synthetic demo dataset" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "IndiGo", flight_number: "6E-2412", departure_time: "04:30 PM", arrival_time: "06:37 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 6705, base_fare: 4559, fuel_surcharge: 1073, taxes_udf: 1073, currency: "INR", source: "Synthetic demo dataset" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "IndiGo", flight_number: "6E-891", departure_time: "08:15 PM", arrival_time: "10:22 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5463, base_fare: 3715, fuel_surcharge: 874, taxes_udf: 874, currency: "INR", source: "Synthetic demo dataset" },
 
   // Air India (4 daily frequencies)
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India", flight_number: "AI-887", departure_time: "07:00 AM", arrival_time: "09:07 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 6580, base_fare: 4474, fuel_surcharge: 1053, taxes_udf: 1053, currency: "INR", source: "Google Flights" },
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India", flight_number: "AI-665", departure_time: "10:15 AM", arrival_time: "12:22 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 7201, base_fare: 4897, fuel_surcharge: 1152, taxes_udf: 1152, currency: "INR", source: "Google Flights" },
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India", flight_number: "AI-806", departure_time: "03:00 PM", arrival_time: "05:07 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 6332, base_fare: 4306, fuel_surcharge: 1013, taxes_udf: 1013, currency: "INR", source: "Google Flights" },
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India", flight_number: "AI-624", departure_time: "07:45 PM", arrival_time: "09:52 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 7325, base_fare: 4981, fuel_surcharge: 1172, taxes_udf: 1172, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India", flight_number: "AI-887", departure_time: "07:00 AM", arrival_time: "09:07 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 6580, base_fare: 4474, fuel_surcharge: 1053, taxes_udf: 1053, currency: "INR", source: "Synthetic demo dataset" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India", flight_number: "AI-665", departure_time: "10:15 AM", arrival_time: "12:22 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 7201, base_fare: 4897, fuel_surcharge: 1152, taxes_udf: 1152, currency: "INR", source: "Synthetic demo dataset" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India", flight_number: "AI-806", departure_time: "03:00 PM", arrival_time: "05:07 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 6332, base_fare: 4306, fuel_surcharge: 1013, taxes_udf: 1013, currency: "INR", source: "Synthetic demo dataset" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India", flight_number: "AI-624", departure_time: "07:45 PM", arrival_time: "09:52 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 7325, base_fare: 4981, fuel_surcharge: 1172, taxes_udf: 1172, currency: "INR", source: "Synthetic demo dataset" },
 
   // Akasa Air (4 daily frequencies)
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Akasa Air", flight_number: "QP-1102", departure_time: "08:00 AM", arrival_time: "10:07 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5587, base_fare: 3799, fuel_surcharge: 894, taxes_udf: 894, currency: "INR", source: "Google Flights" },
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Akasa Air", flight_number: "QP-1384", departure_time: "01:15 PM", arrival_time: "03:22 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5339, base_fare: 3631, fuel_surcharge: 854, taxes_udf: 854, currency: "INR", source: "Google Flights" },
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Akasa Air", flight_number: "QP-1402", departure_time: "05:45 PM", arrival_time: "07:52 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5836, base_fare: 3968, fuel_surcharge: 934, taxes_udf: 934, currency: "INR", source: "Google Flights" },
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Akasa Air", flight_number: "QP-1519", departure_time: "09:30 PM", arrival_time: "11:37 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5091, base_fare: 3462, fuel_surcharge: 815, taxes_udf: 814, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Akasa Air", flight_number: "QP-1102", departure_time: "08:00 AM", arrival_time: "10:07 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5587, base_fare: 3799, fuel_surcharge: 894, taxes_udf: 894, currency: "INR", source: "Synthetic demo dataset" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Akasa Air", flight_number: "QP-1384", departure_time: "01:15 PM", arrival_time: "03:22 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5339, base_fare: 3631, fuel_surcharge: 854, taxes_udf: 854, currency: "INR", source: "Synthetic demo dataset" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Akasa Air", flight_number: "QP-1402", departure_time: "05:45 PM", arrival_time: "07:52 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5836, base_fare: 3968, fuel_surcharge: 934, taxes_udf: 934, currency: "INR", source: "Synthetic demo dataset" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Akasa Air", flight_number: "QP-1519", departure_time: "09:30 PM", arrival_time: "11:37 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5091, base_fare: 3462, fuel_surcharge: 815, taxes_udf: 814, currency: "INR", source: "Synthetic demo dataset" },
 
   // SpiceJet (3 daily frequencies)
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "SpiceJet", flight_number: "SG-8169", departure_time: "09:15 AM", arrival_time: "11:22 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5960, base_fare: 4053, fuel_surcharge: 954, taxes_udf: 953, currency: "INR", source: "Google Flights" },
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "SpiceJet", flight_number: "SG-124", departure_time: "02:45 PM", arrival_time: "04:52 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5525, base_fare: 3757, fuel_surcharge: 884, taxes_udf: 884, currency: "INR", source: "Google Flights" },
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "SpiceJet", flight_number: "SG-8715", departure_time: "06:45 PM", arrival_time: "08:52 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 6084, base_fare: 4137, fuel_surcharge: 973, taxes_udf: 974, currency: "INR", source: "Google Flights" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "SpiceJet", flight_number: "SG-8169", departure_time: "09:15 AM", arrival_time: "11:22 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5960, base_fare: 4053, fuel_surcharge: 954, taxes_udf: 953, currency: "INR", source: "Synthetic demo dataset" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "SpiceJet", flight_number: "SG-124", departure_time: "02:45 PM", arrival_time: "04:52 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5525, base_fare: 3757, fuel_surcharge: 884, taxes_udf: 884, currency: "INR", source: "Synthetic demo dataset" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "SpiceJet", flight_number: "SG-8715", departure_time: "06:45 PM", arrival_time: "08:52 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 6084, base_fare: 4137, fuel_surcharge: 973, taxes_udf: 974, currency: "INR", source: "Synthetic demo dataset" },
 
   // Air India Express (3 daily frequencies)
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India Express", flight_number: "IX-114", departure_time: "06:45 AM", arrival_time: "08:52 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5401, base_fare: 3673, fuel_surcharge: 864, taxes_udf: 864, currency: "INR", source: "Google Flights" },
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India Express", flight_number: "IX-482", departure_time: "12:30 PM", arrival_time: "02:37 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5215, base_fare: 3546, fuel_surcharge: 834, taxes_udf: 835, currency: "INR", source: "Google Flights" },
-  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India Express", flight_number: "IX-936", departure_time: "09:00 PM", arrival_time: "11:07 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5029, base_fare: 3420, fuel_surcharge: 805, taxes_udf: 804, currency: "INR", source: "Google Flights" }
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India Express", flight_number: "IX-114", departure_time: "06:45 AM", arrival_time: "08:52 AM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5401, base_fare: 3673, fuel_surcharge: 864, taxes_udf: 864, currency: "INR", source: "Synthetic demo dataset" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India Express", flight_number: "IX-482", departure_time: "12:30 PM", arrival_time: "02:37 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5215, base_fare: 3546, fuel_surcharge: 834, taxes_udf: 835, currency: "INR", source: "Synthetic demo dataset" },
+  { route_id: "DEL-BOM", origin: "DEL", destination: "BOM", date: "2026-09-15", booking_window: "T+7", carrier: "Air India Express", flight_number: "IX-936", departure_time: "09:00 PM", arrival_time: "11:07 PM", duration_mins: 127, stops: 0, is_direct: true, total_fare: 5029, base_fare: 3420, fuel_surcharge: 805, taxes_udf: 804, currency: "INR", source: "Synthetic demo dataset" }
 ];
 
 export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelected }: Props) {
-  const [selectedRoute, setSelectedRoute] = useState(activeRouteId || "DEL-BOM");
+  const [localRoute, setSelectedRoute] = useState("DEL-BOM");
+  const selectedRoute = activeRouteId || localRoute;
+  const requestId = useRef(0);
   const [selectedWindow, setSelectedWindow] = useState("T+7");
   const [selectedSource, setSelectedSource] = useState<"google_flights" | "skyscanner">("google_flights");
   const [carrierFilter, setCarrierFilter] = useState("ALL");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [explainOpen, setExplainOpen] = useState(true);
 
-  // Sync when activeRouteId changes from parent without triggering double fetch
-  useEffect(() => {
-    if (activeRouteId && activeRouteId !== selectedRoute) {
-      setSelectedRoute(activeRouteId);
-    }
-  }, [activeRouteId]);
-
   const [loading, setLoading] = useState(false);
   const [records, setRecords] = useState<FlightRecord[]>(INITIAL_DEL_BOM_RECORDS);
-  const [fetchSource, setFetchSource] = useState("Google Flights");
-  const [fetchTimestamp, setFetchTimestamp] = useState<string>("Cache: 20m ago");
+  const [fetchSource, setFetchSource] = useState("Synthetic demo dataset");
+  const [fetchTimestamp, setFetchTimestamp] = useState<string>("Sample: 08 Sep 2026");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Initial fetch on mount or when route/window changes
   const fetchLiveFares = async (routeId = selectedRoute, win = selectedWindow, src = selectedSource) => {
+    const currentRequest = ++requestId.current;
     setLoading(true);
     setErrorMsg(null);
     const rObj = ROUTES.find(r => r.id === routeId) || ROUTES[0];
@@ -136,6 +132,7 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
 
       if (!res.ok) throw new Error(`Scraper HTTP ${res.status}`);
       const data = await res.json();
+      if (currentRequest !== requestId.current) return;
       if (data.records && Array.isArray(data.records)) {
         setRecords(data.records);
         setFetchSource(data.source || (src === "google_flights" ? "Google Flights" : "Skyscanner"));
@@ -143,16 +140,19 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
       } else {
         throw new Error("Invalid payload format received");
       }
-    } catch (err: any) {
-      console.error("Live fetch error:", err);
-      setErrorMsg(err.message || "Failed to reach live scraping daemon");
+    } catch (err: unknown) {
+      if (currentRequest !== requestId.current) return;
+      setRecords([]);
+      setErrorMsg(err instanceof Error ? err.message : "Could not load sample fares. Please retry.");
     } finally {
-      setLoading(false);
+      if (currentRequest === requestId.current) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchLiveFares(selectedRoute, selectedWindow, selectedSource);
+    // Defer state changes and cancel stale requests when filters change.
+    const timer = setTimeout(() => { void fetchLiveFares(selectedRoute, selectedWindow, selectedSource); }, 0);
+    return () => { clearTimeout(timer); requestId.current++; };
   }, [selectedRoute, selectedWindow, selectedSource]);
 
   const [sortBy, setSortBy] = useState<"price" | "time">("price");
@@ -189,11 +189,12 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
   const marketSpread = maxFare - minFare;
 
   // Build direct verification links
-  const targetDateStr = records[0]?.date || new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
+  const targetDateStr = records[0]?.date || "2026-09-15";
   const googleFlightsUrl = `https://www.google.com/travel/flights?q=Flights%20to%20${activeRouteObj.dest}%20from%20${activeRouteObj.origin}%20on%20${targetDateStr}%20oneway&curr=INR&hl=en`;
 
   return (
     <div className="space-y-6">
+      {errorMsg && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{errorMsg}</p>}
       
       {/* 1. TOP HEADER & CONTEXT */}
       <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 shadow-xs space-y-4">
@@ -201,7 +202,7 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
           <div>
             <div className="flex items-center gap-2">
               <span className="bg-blue-100 text-blue-800 text-xs font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                {lang === "hi" ? "लाइव एयरलाइन सत्यापन" : lang === "mr" ? "थेट विमान कंपनी पडताळणी" : "Carrier-Level Live Audit"}
+                {lang === "hi" ? "लाइव एयरलाइन सत्यापन" : lang === "mr" ? "थेट विमान कंपनी पडताळणी" : "Carrier-Level Sample Audit"}
               </span>
               <span className="text-xs text-slate-500 font-mono">
                 {fetchTimestamp ? `Last sync: ${fetchTimestamp}` : "Ready"}
@@ -214,7 +215,7 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
                   ? "लाइव एयरलाइन किराया निरीक्षक (IndiGo, Air India, Akasa, SpiceJet)" 
                   : lang === "mr" 
                   ? "थेट विमान कंपन्यांचे तिकीट दर निरीक्षक (IndiGo, Air India, Akasa, SpiceJet)" 
-                  : "Live Airline Fare Inspector & Direct Google Flights Validator"}
+                  : "Sample Fare Inspector & External Fare Search"}
               </span>
             </h2>
             <p className="text-xs text-slate-600 mt-0.5 max-w-3xl">
@@ -222,7 +223,7 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
                 ? "वास्तविक समय में सभी प्रमुख एयरलाइनों की उड़ानें, प्रस्थान समय, बेस फेयर, ईंधन अधिभार (YQ) और हवाईअड्डा कर देखें और सीधे Google Flights पर सत्यापित करें।"
                 : lang === "mr"
                 ? "थेट सर्व प्रमुख विमान कंपन्यांच्या उड्डाणे, वेळ, मूळ भाडे, इंधन अधिभार व विमानतळ कर तपासा आणि थेट Google Flights वर पडताळा."
-                : "Inspect real-time live flight quotes across IndiGo, Air India, Akasa Air, SpiceJet, and AI Express with precise base fare decomposition and direct one-click GDS cross-verification."}
+                : "Explore generated fare examples by route and booking horizon. Fare components are assumed proportions; external search links are for independent comparison."}
             </p>
           </div>
 
@@ -233,7 +234,7 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-xs flex items-center gap-2 cursor-pointer transition disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-              <span>{loading ? (lang === "hi" ? "स्कैन हो रहा है..." : "Fetching Live Fares...") : (lang === "hi" ? "लाइव डेटा रीफ्रेश करें" : "Refresh Live Fares")}</span>
+              <span>{loading ? (lang === "hi" ? "स्कैन हो रहा है..." : "Loading sample fares...") : (lang === "hi" ? "लाइव डेटा रीफ्रेश करें" : "Refresh Sample Fares")}</span>
             </button>
 
             <a
@@ -261,6 +262,7 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
               value={selectedRoute}
               onChange={(e) => {
                 setSelectedRoute(e.target.value);
+                onRouteSelected?.(e.target.value);
                 setCarrierFilter("ALL");
               }}
               className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500"
@@ -491,7 +493,7 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
         <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/60">
           <div>
             <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
-              <span>{filteredRecords.length} Live Quotes on {activeRouteObj.name}</span>
+              <span>{filteredRecords.length} Sample Quotes on {activeRouteObj.name}</span>
               <span className="text-xs bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full font-mono">
                 {selectedWindow} Horizon ({targetDateStr})
               </span>
@@ -658,7 +660,7 @@ export default function LiveAirlineInspector({ lang, activeRouteId, onRouteSelec
                       rel="noopener noreferrer"
                       className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[11px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition"
                     >
-                      <span>Verify Live</span>
+                      <span>Search fares</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>

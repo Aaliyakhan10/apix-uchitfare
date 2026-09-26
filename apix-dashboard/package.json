@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:demo": "node scripts/smoke-demo.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.41.0",

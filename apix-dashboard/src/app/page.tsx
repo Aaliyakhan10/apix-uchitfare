@@ -10,12 +10,12 @@ import {
 } from "lucide-react";
 
 import { ROUTES } from "@/data/routes";
-import { HISTORICAL_SERIES, ROUTE_SUMMARIES } from "@/data/mockData";
+import { HISTORICAL_SERIES, ROUTE_SUMMARIES, FLAGGED_ALERTS } from "@/data/mockData";
+import { DEMO_OVERVIEW } from "@/data/overview";
 import { fetchFromBackend, getActiveBackendUrl } from "@/data/config";
 
 // Sub-Components
 import LiveAirlineInspector from "@/components/LiveAirlineInspector";
-import CartelRadar from "@/components/CartelRadar";
 import LiveIndexCalculator from "@/components/LiveIndexCalculator";
 import WhatIsThisModal from "@/components/WhatIsThisModal";
 import { Language, translations } from "@/i18n/translations";
@@ -32,148 +32,12 @@ export default function DashboardPage() {
   const [activeAuditorRoute, setActiveAuditorRoute] = useState<string>("DEL-BOM");
 
   // Dynamic Live State from Backend API
-  const [flaggedAlerts, setFlaggedAlerts] = useState<any[]>([
-    {
-      route_id: "BOM-IXU",
-      origin: "Mumbai",
-      destination: "Aurangabad",
-      category: "Regional/UDAN",
-      hhi: 10000,
-      severity: "HIGH",
-      dominant_carrier: "IndiGo",
-      dominant_share_pct: 100.0,
-      fare_per_km: 17.65,
-      benchmark_fare_per_km: 6.84,
-      markup_percent: 158.0,
-      reason: "Route exhibits pure monopoly (HHI 10,000) with IndiGo controlling 100% capacity. Fare of ₹17.65/km is 158% above distance benchmark.",
-      recommended_action: "Immediate notice under Section 3(4) of Competition Act / DGCA Airfare Monitoring Cell Review."
-    },
-    {
-      route_id: "DEL-DED",
-      origin: "Delhi",
-      destination: "Dehradun",
-      category: "Regional/UDAN",
-      hhi: 5001,
-      severity: "HIGH",
-      dominant_carrier: "Alliance Air",
-      dominant_share_pct: 50.1,
-      fare_per_km: 18.25,
-      benchmark_fare_per_km: 6.84,
-      markup_percent: 167.0,
-      reason: "Route exhibits severe duopoly concentration (HHI 5,001). Fare of ₹18.25/km is 167% above regional benchmark.",
-      recommended_action: "Issue notice under Section 3(4) of Competition Act."
-    },
-    {
-      route_id: "DEL-DHM",
-      origin: "Delhi",
-      destination: "Dharamshala",
-      category: "Regional/UDAN",
-      hhi: 5001,
-      severity: "HIGH",
-      dominant_carrier: "SpiceJet",
-      dominant_share_pct: 50.1,
-      fare_per_km: 17.84,
-      benchmark_fare_per_km: 6.84,
-      markup_percent: 161.0,
-      reason: "Route exhibits severe market concentration (HHI 5,001). High markup over distance benchmark.",
-      recommended_action: "DGCA Airfare Monitoring Cell Inquiry."
-    },
-    {
-      route_id: "DEL-IXL",
-      origin: "Delhi",
-      destination: "Leh",
-      category: "Regional/UDAN",
-      hhi: 3334,
-      severity: "HIGH",
-      dominant_carrier: "IndiGo",
-      dominant_share_pct: 45.2,
-      fare_per_km: 14.12,
-      benchmark_fare_per_km: 6.84,
-      markup_percent: 106.0,
-      reason: "High concentration (HHI 3,334) on high-altitude corridor. Fare ₹14.12/km is +106% above baseline.",
-      recommended_action: "Seasonal tariff ceiling review."
-    },
-    {
-      route_id: "CCU-IXB",
-      origin: "Kolkata",
-      destination: "Bagdogra",
-      category: "Regional/UDAN",
-      hhi: 3333,
-      severity: "MEDIUM",
-      dominant_carrier: "SpiceJet",
-      dominant_share_pct: 42.0,
-      fare_per_km: 9.80,
-      benchmark_fare_per_km: 6.84,
-      markup_percent: 43.0,
-      reason: "Concentration HHI 3,333. Fare ₹9.80/km exceeds regional benchmark by 43%.",
-      recommended_action: "DGCA Tariff Monitoring."
-    },
-    {
-      route_id: "BOM-HYD",
-      origin: "Mumbai",
-      destination: "Hyderabad",
-      category: "Metro",
-      hhi: 3333,
-      severity: "MEDIUM",
-      dominant_carrier: "Air India",
-      dominant_share_pct: 40.5,
-      fare_per_km: 6.88,
-      benchmark_fare_per_km: 4.71,
-      markup_percent: 46.0,
-      reason: "Trunk concentration (HHI 3,333) with Air India + IndiGo holding 85%+. Fare is 46% above metro average.",
-      recommended_action: "CCI Section 3(3) parallel pricing audit."
-    },
-    {
-      route_id: "BLR-HYD",
-      origin: "Bengaluru",
-      destination: "Hyderabad",
-      category: "Metro",
-      hhi: 2501,
-      severity: "MEDIUM",
-      dominant_carrier: "IndiGo",
-      dominant_share_pct: 38.0,
-      fare_per_km: 6.65,
-      benchmark_fare_per_km: 4.71,
-      markup_percent: 41.0,
-      reason: "High concentration (HHI 2,501) on short-haul metro hop. Fare is 41% above distance benchmark.",
-      recommended_action: "Regulatory pricing review."
-    },
-    {
-      route_id: "BOM-GOI",
-      origin: "Mumbai",
-      destination: "Goa",
-      category: "Metro",
-      hhi: 2500,
-      severity: "MEDIUM",
-      dominant_carrier: "Akasa Air",
-      dominant_share_pct: 35.0,
-      fare_per_km: 6.20,
-      benchmark_fare_per_km: 4.71,
-      markup_percent: 32.0,
-      reason: "Concentration HHI 2,500. Leisure corridor surge pricing without proportionate cost variance.",
-      recommended_action: "Weekend surge cap advisement."
-    }
-  ]);
-  const [apixOverview, setApixOverview] = useState<any>({
-    current_apix: 165.48,
-    base_period_apix: 100.0,
-    day_change: 0.71,
-    overall_change: 65.48,
-    latest_date: "2026-09-08",
-    confidence_score: 96.1,
-    reliability_status: "Optimal",
-    metro_apix: 168.21,
-    regional_apix: 159.11,
-    monitored_routes_count: 25,
-    flagged_routes_count: 8,
-    backtest_correlation: 0.9997,
-    backtest_mape: 2.05,
-    last_sync_display: "20m ago"
-  });
+  const [flaggedAlerts, setFlaggedAlerts] = useState(FLAGGED_ALERTS);
+  const [apixOverview, setApixOverview] = useState<typeof DEMO_OVERVIEW & { booking_windows?: Record<string, { fare: number; delta_pct: number }> }>(DEMO_OVERVIEW);
 
-  const [historyData, setHistoryData] = useState<any[]>(HISTORICAL_SERIES);
-  const [routesData, setRoutesData] = useState<any[]>(ROUTE_SUMMARIES);
-  const [backendBaseUrl, setBackendBaseUrl] = useState<string>("http://127.0.0.1:8001");
+  const [historyData, setHistoryData] = useState(HISTORICAL_SERIES);
+  const [routesData, setRoutesData] = useState(ROUTE_SUMMARIES);
+  const [backendBaseUrl, setBackendBaseUrl] = useState<string>("");
 
   // Fetch live dynamic data from backend API on mount
   useEffect(() => {
@@ -226,8 +90,8 @@ export default function DashboardPage() {
 
   // 30-Min Autonomous Sync Daemon State
   const [countdownSeconds, setCountdownSeconds] = useState<number>(1800); // 30 minutes = 1800s
-  const [autoDaemonEnabled, setAutoDaemonEnabled] = useState<boolean>(true);
-  const [lastSyncedDisplay, setLastSyncedDisplay] = useState<string>("30m ago");
+  const [autoDaemonEnabled, setAutoDaemonEnabled] = useState<boolean>(false);
+  const [lastSyncedDisplay, setLastSyncedDisplay] = useState<string>("Sample snapshot");
   const [oneClickModalOpen, setOneClickModalOpen] = useState<boolean>(false);
   const [oneClickRunning, setOneClickRunning] = useState<boolean>(false);
   const [oneClickProgress, setOneClickProgress] = useState<number>(0);
@@ -256,52 +120,27 @@ export default function DashboardPage() {
     setOneClickRunning(true);
     if (openModal) setOneClickModalOpen(true);
     setOneClickProgress(15);
-    setOneClickLogs([
-      "🚀 [00:01] Starting Autonomous 30-Minute Pipeline across all 25 national city corridors...",
-      "📡 [00:02] Harvesting live quotes from Google Flights & Skyscanner across all cities (Playwright Stealth)..."
-    ]);
-
-
+    setOneClickLogs(["Loading the reproducible sample dataset..."]);
     try {
-      await new Promise(r => setTimeout(r, 650));
-      setOneClickProgress(32);
-      setOneClickLogs(prev => [...prev, "👥 [00:03] Stage 2/7: Stratifying quotes into Economy (82%), Premium (11%), Business (7%), Concessional (8%)..."]);
-
-      await new Promise(r => setTimeout(r, 650));
-      setOneClickProgress(52);
-      setOneClickLogs(prev => [...prev, "🛡️ [00:04] Stage 3/7: 5-Stage ML purification with Isolation Forest anomaly quarantine (371 outliers filtered)..."]);
-
-      await new Promise(r => setTimeout(r, 650));
-      setOneClickProgress(72);
-      setOneClickLogs(prev => [...prev, "🧠 [00:05] Stage 4/7: Local Hugging Face LLM (Qwen2.5 on CPU) normalizing fare payloads to canonical MoSPI schema..."]);
-
-      await new Promise(r => setTimeout(r, 650));
-      setOneClickProgress(88);
-      setOneClickLogs(prev => [...prev, "⚖️ [00:06] Stage 5/7: Calculating DGCA traffic-weighted Laspeyres index (Metro 70% + UDAN 30%)..."]);
-
-      await new Promise(r => setTimeout(r, 650));
-      setOneClickProgress(95);
-      setOneClickLogs(prev => [...prev, "📊 [00:07] Stage 6/7: 30-Day DGCA monthly yield validation verified (r = 0.9997, MAPE = 2.05%)..."]);
-
-      try {
-        const syncRes = await fetchFromBackend("/api/pipeline/one-click-sync", { method: "POST" });
-        if (syncRes.ok) {
-          const syncData = await syncRes.json();
-          if (syncData.new_overview) setApixOverview(syncData.new_overview);
-        }
-      } catch (e) {
-        // Fallback update
-      }
-
-
-      await new Promise(r => setTimeout(r, 500));
+      const response = await fetchFromBackend("/api/overview");
+      const overview = await response.json();
+      setOneClickProgress(65);
+      const [routes, history, alerts] = await Promise.all([
+        fetchFromBackend("/api/routes").then(r => r.json()),
+        fetchFromBackend("/api/index/history").then(r => r.json()),
+        fetchFromBackend("/api/routes/flagged").then(r => r.json()),
+      ]);
+      setApixOverview(overview);
+      setRoutesData(routes);
+      setHistoryData(history);
+      setFlaggedAlerts(alerts);
+      setOneClickLogs(["Sample dataset loaded successfully.", `${routes.length} routes; ${history.length} daily index observations; five booking horizons.`, `Sample APIx: ${overview.current_apix}. No live scraping or official validation was performed.`]);
       setOneClickProgress(100);
-      setOneClickLogs(prev => [...prev, "✅ [00:08] Master Autonomous Pipeline Complete! Updated APIx = 165.48 across 25 corridors & Time-Series DB."]);
-      setLastSyncedDisplay("Just now");
+      setLastSyncedDisplay(new Date().toLocaleTimeString("en-IN"));
       setCountdownSeconds(1800);
-    } catch (err) {
-
-      setOneClickLogs(prev => [...prev, "⚠️ Sync completed with calibrated fallback."]);
+    } catch {
+      setOneClickLogs(["Refresh failed. Existing data is preserved. Check the local server and retry."]);
+      setOneClickProgress(0);
     } finally {
       setOneClickRunning(false);
     }
@@ -338,7 +177,7 @@ export default function DashboardPage() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold tracking-widest uppercase text-slate-400">
-                  {lang === "hi" ? "भारत सरकार • सांख्यिकी मंत्रालय" : "GOVERNMENT OF INDIA • MoSPI"}
+                  {lang === "hi" ? "भारत सरकार • सांख्यिकी मंत्रालय" : "BitSynq • SIH 2026 PROTOTYPE"}
                 </span>
                 <span className="bg-blue-900/60 border border-blue-500/30 text-blue-300 text-[10px] font-semibold px-2 py-0.2 rounded-full font-mono">
                   SIH26056
@@ -348,7 +187,7 @@ export default function DashboardPage() {
                 <span>{t.portalTitle}</span>
                 <span className="text-slate-500 text-sm font-normal">|</span>
                 <span className="text-xs text-amber-400 font-bold uppercase tracking-wider bg-amber-950/40 border border-amber-500/30 px-2 py-0.5 rounded-md">
-                  Live CPI Engine
+                  Airfare Index Demo
                 </span>
               </h1>
               <p className="text-[11px] text-slate-400 hidden md:flex items-center gap-1.5">
@@ -407,19 +246,19 @@ export default function DashboardPage() {
               onClick={() => handleOneClickSync(true)}
               disabled={oneClickRunning}
               className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-md border border-blue-400/30 flex items-center gap-2 transition active:scale-95 disabled:opacity-50 cursor-pointer"
-              title="Run live automated 20-minute sync cycle"
+              title="Reload the sample dataset"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${oneClickRunning ? "animate-spin text-amber-300" : "text-blue-200"}`} />
-              <span>{oneClickRunning ? "Syncing..." : (lang === "hi" ? "लाइव सिंक चलाएं" : "Sync Live Data")}</span>
+              <span>{oneClickRunning ? "Syncing..." : (lang === "hi" ? "लाइव सिंक चलाएं" : "Refresh Demo")}</span>
             </button>
 
             {/* OpenAPI Documentation */}
             <a
-              href={`${backendBaseUrl}/docs`}
+              href="/api/overview"
               target="_blank"
               rel="noreferrer"
               className="bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 text-xs font-medium px-2.5 py-2 rounded-xl flex items-center gap-1.5 transition hidden sm:flex"
-              title="OpenAPI Backend Documentation"
+              title="View the sample overview API"
             >
               <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
               <span className="hidden sm:inline">API</span>
@@ -438,7 +277,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <span className="flex items-center gap-1.5 font-bold text-emerald-300 bg-emerald-950/60 border border-emerald-600/40 px-2.5 py-0.5 rounded-full text-[11px]">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>Live 2026 Feed • 08 Sep 2026</span>
+              <span>Sample data • 08 Sep 2026</span>
             </span>
 
             <span className="text-slate-400 text-xs">
@@ -450,7 +289,7 @@ export default function DashboardPage() {
             {/* 30-Min Countdown Clock Badge */}
             <div className="flex items-center gap-1.5 text-slate-300 text-xs">
               <Clock className="w-3.5 h-3.5 text-amber-400" />
-              <span>Next 30-min cycle in:</span>
+              <span>Demo refresh timer:</span>
               <span className="text-white bg-slate-800 px-1.5 py-0.5 rounded font-mono font-bold text-[11px] border border-slate-700">
                 {Math.floor(countdownSeconds / 60)}:{(countdownSeconds % 60).toString().padStart(2, '0')}
               </span>
@@ -460,7 +299,7 @@ export default function DashboardPage() {
 
             <span className="bg-indigo-950/80 border border-indigo-500/40 text-indigo-300 px-2.5 py-0.5 rounded-full text-[11px] font-mono hidden xl:flex items-center gap-1.5">
               <Database className="w-3 h-3 text-indigo-400" />
-              <span>TimeSeries DB: WAL Active • 25 Corridors (All Cities)</span>
+              <span>Local sample APIs • 25 route corridors</span>
             </span>
           </div>
 
@@ -469,7 +308,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3 shrink-0">
             <span className="text-[11px] text-slate-300 font-mono hidden md:flex items-center gap-1.5 bg-slate-950/80 border border-slate-800 px-2.5 py-0.5 rounded-lg">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>DGCA Benchmark: r = {apixOverview.backtest_correlation || 0.9997}, MAPE = {apixOverview.backtest_mape || 2.05}%</span>
+              <span>Sample benchmark: r = {apixOverview.backtest_correlation}, MAPE = {apixOverview.backtest_mape}%</span>
             </span>
 
             <button
@@ -477,9 +316,9 @@ export default function DashboardPage() {
               className={`px-2 py-0.5 rounded-lg text-[11px] font-bold border transition cursor-pointer flex items-center gap-1 ${
                 autoDaemonEnabled ? "bg-emerald-950/50 text-emerald-300 border-emerald-700/60" : "bg-slate-800 text-slate-400 border-slate-700"
               }`}
-              title="Toggle 20-minute automatic scraper daemon"
+              title="Toggle 30-minute sample refresh"
             >
-              <span>Auto (20m):</span>
+              <span>Auto (30m):</span>
               <span className="font-mono text-[10px]">{autoDaemonEnabled ? "ON" : "OFF"}</span>
             </button>
           </div>
@@ -489,6 +328,15 @@ export default function DashboardPage() {
 
       {/* MAIN CONTENT CONTAINER */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-slate-900" aria-label="Submission demo guide">
+          <p className="text-xs font-bold uppercase tracking-widest text-amber-800">UchitFare · BitSynq · SIH26056</p>
+          <h2 className="mt-1 text-xl font-bold">Understand airfare changes, from quote to index.</h2>
+          <p className="mt-2 text-sm leading-relaxed">Submission prototype using synthetic sample fares through 8 September 2026. Airline schedules, benchmarks, confidence scores and alerts are illustrative; they are not verified live quotes, regulatory findings or MoSPI approval.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {([['auditor', '1. Inspect fares'], ['calculator', '2. Change assumptions'], ['routes', '3. Explore 25 routes'], ['trend', '4. Compare trends']] as const).map(([tab, label]) => <button key={tab} onClick={() => setActiveTab(tab)} className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm font-semibold hover:bg-amber-100">{label}</button>)}
+            <a href="/api/export/cpi" className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">Download sample CSV</a>
+          </div>
+        </section>
 
         {/* ========================================================================= */}
         {/* ⭐ TOP COMMAND CENTER: THE OFFICIAL APIx INDEX POINT (WHAT THE PS WANTS) ⭐ */}
@@ -508,7 +356,7 @@ export default function DashboardPage() {
                   <span>MoSPI Problem Statement SIH26056 Core Deliverable</span>
                 </span>
                 <span className="text-blue-200 text-xs font-medium">
-                  Official Replacement for Manual Ticketing Counter Price Collection
+                  Prototype for augmenting airfare price collection
                 </span>
               </div>
 
@@ -539,21 +387,21 @@ export default function DashboardPage() {
 
                 <div className="flex items-baseline gap-3">
                   <span className="text-5xl sm:text-6xl font-black font-mono tracking-tight text-white drop-shadow-md">
-                    {apixOverview.current_apix || 165.48}
+                    {apixOverview.current_apix}
                   </span>
                   <div className="space-y-0.5">
                     <span className="inline-flex items-center gap-1 text-emerald-400 font-black text-sm bg-emerald-950/80 border border-emerald-600/50 px-2 py-0.5 rounded-md font-mono">
                       <TrendingUp className="w-3.5 h-3.5" />
-                      +{apixOverview.overall_change || 65.48}% Inflation
+                      +{apixOverview.overall_change}% Inflation
                     </span>
                     <span className="text-[11px] text-slate-400 block font-medium">
-                      +{apixOverview.day_change || 0.71} in last 24h
+                      +{apixOverview.day_change} in last 24h
                     </span>
                   </div>
                 </div>
 
                 <p className="text-xs text-blue-100/90 leading-relaxed pt-1">
-                  Air travel costs in India are currently <strong>+{apixOverview.overall_change || 65.5}% higher</strong> than the 2024 base period. This index plugs directly into the national Consumer Price Index (CPI) Transport subgroup.
+                  In this synthetic scenario, fares are <strong>+{apixOverview.overall_change}% higher</strong> than the 2024 base period. This illustrates a possible input to CPI research; integration requires validation.
                 </p>
               </div>
 
@@ -567,7 +415,7 @@ export default function DashboardPage() {
                     <span className="bg-indigo-500/20 text-indigo-300 px-2 py-0.2 rounded font-mono">70% Weight</span>
                   </div>
                   <div className="text-3xl font-black text-indigo-300 font-mono">
-                    {apixOverview.metro_apix || 168.21}
+                    {apixOverview.metro_apix}
                   </div>
                   <p className="text-[11px] text-slate-300 leading-snug">
                     15 High-Density Trunk Corridors (DEL, BOM, BLR, CCU, MAA, HYD).
@@ -581,24 +429,24 @@ export default function DashboardPage() {
                     <span className="bg-amber-500/20 text-amber-300 px-2 py-0.2 rounded font-mono">30% Weight</span>
                   </div>
                   <div className="text-3xl font-black text-amber-300 font-mono">
-                    {apixOverview.regional_apix || 159.11}
+                    {apixOverview.regional_apix}
                   </div>
                   <p className="text-[11px] text-slate-300 leading-snug">
-                    10 Subsidized Tier-2/3 Corridors (Guwahati, Bagdogra, Leh).
+                    10 Regional / Tier-2/3 Corridors (Guwahati, Bagdogra, Leh).
                   </p>
                 </div>
 
-                {/* Pillar 3: Ground-Truth DGCA Correlation */}
+                {/* Pillar 3: Illustrative DGCA Correlation */}
                 <div className="bg-slate-900/60 border border-emerald-500/30 p-4 rounded-2xl space-y-1.5">
                   <div className="flex items-center justify-between text-[11px] font-bold text-slate-400">
-                    <span>DGCA Validation</span>
-                    <span className="bg-emerald-500/20 text-emerald-300 px-2 py-0.2 rounded font-mono">r=0.9997</span>
+                    <span>Sample Comparison</span>
+                    <span className="bg-emerald-500/20 text-emerald-300 px-2 py-0.2 rounded font-mono">r={apixOverview.backtest_correlation}</span>
                   </div>
                   <div className="text-3xl font-black text-emerald-400 font-mono">
-                    {apixOverview.backtest_mape || 2.05}%
+                    {apixOverview.backtest_mape}%
                   </div>
                   <p className="text-[11px] text-slate-300 leading-snug">
-                    Mean Error vs DGCA Passenger Yields (Target &lt;5% achieved).
+                    Illustrative error metric; independent validation pending.
                   </p>
                 </div>
 
@@ -615,32 +463,50 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-center text-xs">
                 <div className="bg-slate-900/80 border border-rose-500/40 p-2.5 rounded-xl">
                   <span className="text-[10px] text-rose-300 font-bold uppercase block">T+1 (Tomorrow Surge)</span>
-                  <span className="text-base font-black text-white font-mono">₹11,500</span>
-                  <span className="text-[10px] text-rose-400 block font-semibold">+58% Last-Minute Surge</span>
+                  <span className="text-base font-black text-white font-mono">
+                    ₹{apixOverview.booking_windows?.['T+1']?.fare ? apixOverview.booking_windows['T+1'].fare.toLocaleString("en-IN") : "11,558"}
+                  </span>
+                  <span className="text-[10px] text-rose-400 block font-semibold">
+                    {apixOverview.booking_windows?.['T+1']?.delta_pct !== undefined ? `+${Math.abs(apixOverview.booking_windows['T+1'].delta_pct)}%` : "+91%"} Last-Minute Surge
+                  </span>
                 </div>
 
                 <div className="bg-slate-900/80 border border-amber-500/40 p-2.5 rounded-xl">
                   <span className="text-[10px] text-amber-300 font-bold uppercase block">T+7 (1-Week Normal)</span>
-                  <span className="text-base font-black text-white font-mono">₹6,310</span>
-                  <span className="text-[10px] text-amber-300 block font-semibold">+15% Near-Term Curve</span>
+                  <span className="text-base font-black text-white font-mono">
+                    ₹{apixOverview.booking_windows?.['T+7']?.fare ? apixOverview.booking_windows['T+7'].fare.toLocaleString("en-IN") : "7,907"}
+                  </span>
+                  <span className="text-[10px] text-amber-300 block font-semibold">
+                    {apixOverview.booking_windows?.['T+7']?.delta_pct !== undefined ? `+${Math.abs(apixOverview.booking_windows['T+7'].delta_pct)}%` : "+31%"} Near-Term Curve
+                  </span>
                 </div>
 
                 <div className="bg-blue-600/30 border border-blue-400 p-2.5 rounded-xl ring-2 ring-blue-400/40">
                   <span className="text-[10px] text-amber-300 font-bold uppercase block">T+15 (Planned Horizon)</span>
-                  <span className="text-base font-black text-white font-mono">₹5,490</span>
-                  <span className="text-[10px] text-blue-200 block font-bold">MoSPI Base Weight (40%)</span>
+                  <span className="text-base font-black text-white font-mono">
+                    ₹{apixOverview.booking_windows?.['T+15']?.fare ? apixOverview.booking_windows['T+15'].fare.toLocaleString("en-IN") : "6,053"}
+                  </span>
+                  <span className="text-[10px] text-blue-200 block font-bold">Sample Booking Weight (25%)</span>
                 </div>
 
                 <div className="bg-slate-900/80 border border-indigo-500/40 p-2.5 rounded-xl">
                   <span className="text-[10px] text-indigo-300 font-bold uppercase block">T+30 (1-Month Advance)</span>
-                  <span className="text-base font-black text-white font-mono">₹4,820</span>
-                  <span className="text-[10px] text-indigo-300 block font-semibold">-12% Advance Savings</span>
+                  <span className="text-base font-black text-white font-mono">
+                    ₹{apixOverview.booking_windows?.['T+30']?.fare ? apixOverview.booking_windows['T+30'].fare.toLocaleString("en-IN") : "4,986"}
+                  </span>
+                  <span className="text-[10px] text-indigo-300 block font-semibold">
+                    {apixOverview.booking_windows?.['T+30']?.delta_pct !== undefined ? `${apixOverview.booking_windows['T+30'].delta_pct}%` : "-18%"} Advance Savings
+                  </span>
                 </div>
 
                 <div className="bg-slate-900/80 border border-emerald-500/40 p-2.5 rounded-xl">
                   <span className="text-[10px] text-emerald-300 font-bold uppercase block">T+45 (Early Bird)</span>
-                  <span className="text-base font-black text-white font-mono">₹4,180</span>
-                  <span className="text-[10px] text-emerald-300 block font-semibold">-24% Early Bird Discount</span>
+                  <span className="text-base font-black text-white font-mono">
+                    ₹{apixOverview.booking_windows?.['T+45']?.fare ? apixOverview.booking_windows['T+45'].fare.toLocaleString("en-IN") : "4,490"}
+                  </span>
+                  <span className="text-[10px] text-emerald-300 block font-semibold">
+                    {apixOverview.booking_windows?.['T+45']?.delta_pct !== undefined ? `${apixOverview.booking_windows['T+45'].delta_pct}%` : "-26%"} Early Bird Discount
+                  </span>
                 </div>
               </div>
             </div>
@@ -661,7 +527,7 @@ export default function DashboardPage() {
             }`}
           >
             <Plane className={`w-4 h-4 ${activeTab === "auditor" ? "text-amber-300" : "text-slate-400"}`} />
-            <span>{lang === "hi" ? "1. लाइव एयरलाइन टिकट निरीक्षक" : "1. Live Airline Quotes & Auditor"}</span>
+            <span>{lang === "hi" ? "1. लाइव एयरलाइन टिकट निरीक्षक" : "1. Sample Airline Quotes & Auditor"}</span>
           </button>
 
           <button
@@ -709,7 +575,7 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
               <div>
                 <span className="bg-blue-100 text-blue-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                  Live Data Evidence
+                  Sample Fare Evidence
                 </span>
                 <h2 className="text-lg font-black text-slate-900 mt-1 flex items-center gap-2">
                   <Plane className="w-5 h-5 text-blue-600" />
@@ -718,12 +584,12 @@ export default function DashboardPage() {
                       ? "विमान कंपनियों के असली टिकट देखें और Google Flights पर जांचें" 
                       : lang === "mr" 
                       ? "विमान कंपन्यांचे खरे तिकीट दर तपासा" 
-                      : "Live Airline Ticket Auditor (IndiGo, Air India, Akasa Air, SpiceJet)"}
+                      : "Airline Fare Auditor • Illustrative Quotes"}
                   </span>
                 </h2>
               </div>
               <span className="text-xs text-slate-500 font-medium">
-                Harvested via Playwright Stealth across 25 corridors • Direct 1-Click Verification
+                Generated examples across 25 corridors • External search for comparison
               </span>
             </div>
 
@@ -761,7 +627,7 @@ export default function DashboardPage() {
                       <span>SIH PPT Technical Approach • Step 7 of 7</span>
                     </span>
                     <span className="text-rose-200 text-xs font-medium">
-                      Statutory Anti-Profiteering Watchdog for DGCA & Competition Commission of India (CCI)
+                      Illustrative concentration screening for analyst review
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -777,7 +643,7 @@ export default function DashboardPage() {
                       Monopoly & Overcharging Surveillance Engine
                     </h2>
                     <p className="text-xs text-rose-100/90 leading-relaxed">
-                      To safeguard air travellers from artificial price gouging, the APIx engine continuously monitors route-level market concentration and identifies anticompetitive fare inflation across all 25 national corridors.
+                      Explore assumed carrier shares and sample fare markups across 25 route corridors. These examples demonstrate a screening workflow; real findings require independently validated observations.
                     </p>
                     
                     {/* The Exact Condition from PPT */}
@@ -789,7 +655,7 @@ export default function DashboardPage() {
                       <p className="text-[11px] font-mono text-slate-200 leading-relaxed">
                         If <span className="text-amber-400 font-bold">HHI ≥ 2,500</span> (High Concentration) <span className="text-rose-400 font-bold">AND</span> <span className="text-amber-400 font-bold">Fare/Km &gt;&gt; Distance-Adjusted National Benchmark</span>:
                         <br />
-                        ➔ Route is automatically flagged as <span className="text-rose-400 font-bold">&quot;Low Competition Risk ⚠️&quot;</span> and reported to DGCA & CCI.
+                        ➔ Route is automatically flagged as <span className="text-rose-400 font-bold">&quot;Low Competition Risk ⚠️&quot;</span> for review in this demo.
                       </p>
                     </div>
                   </div>
@@ -804,7 +670,7 @@ export default function DashboardPage() {
                         HHI = ∑ (sᵢ × 100)²
                       </span>
                       <span className="block text-[10px] text-slate-400 mt-1">
-                        where sᵢ = Carrier i&apos;s scraped route capacity share (0.0 to 1.0)
+                        where sᵢ = Carrier i&apos;s assumed route capacity share (0.0 to 1.0)
                       </span>
                     </div>
 
@@ -850,7 +716,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {flaggedAlerts.map((alert: any) => (
+                {flaggedAlerts.map((alert) => (
                   <div 
                     key={alert.route_id} 
                     className="bg-slate-900/90 border-2 border-rose-500/40 rounded-2xl p-4 space-y-3 hover:border-rose-400 transition shadow-sm flex flex-col justify-between"
@@ -920,7 +786,7 @@ export default function DashboardPage() {
             {/* 3. ALGORITHMIC COLLUSION & CARTEL RADAR (CCI SECTION 3(3)) */}
             <div className="space-y-4">
               <div className="border-t border-slate-800 pt-6">
-                <CartelRadar />
+                <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Screening demonstration only. Concentration and price co-movement do not establish collusion or unlawful pricing. No notifications are sent to regulators.</p>
               </div>
             </div>
 
@@ -987,7 +853,7 @@ export default function DashboardPage() {
                           </span>
                         </td>
                         <td className="py-2.5 px-3 text-right font-mono text-slate-700">{r.distance_km} km</td>
-                        <td className="py-2.5 px-3 text-right font-mono font-bold text-blue-600">₹{(r.current_median_fare || 5400).toLocaleString("en-IN")}</td>
+                        <td className="py-2.5 px-3 text-right font-mono font-bold text-blue-600">₹{Number(r.current_median_fare || r.base_period_fare || 0).toLocaleString("en-IN")}</td>
                         <td className="py-2.5 px-3 text-right font-mono text-slate-700">₹{r.fare_per_km}</td>
                         <td className="py-2.5 px-3 text-center font-mono font-bold">
                           <span className={r.hhi >= 5000 ? "text-rose-600 font-black" : r.hhi >= 2500 ? "text-amber-600 font-black" : "text-emerald-600"}>
@@ -1044,7 +910,7 @@ export default function DashboardPage() {
                   </span>
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Backtested against DGCA Monthly Yield Benchmark (Correlation r = {apixOverview.backtest_correlation || 0.9997}, MAPE = {apixOverview.backtest_mape || 2.05}%)
+                  Backtested against DGCA Monthly Yield Benchmark (Correlation r = {apixOverview.backtest_correlation}, MAPE = {apixOverview.backtest_mape}%)
                 </p>
               </div>
 
@@ -1128,7 +994,7 @@ export default function DashboardPage() {
                 <div>
                   <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Official DGCA Ground-Truth Validation & Statistical Matching</span>
+                    <span>Sample Reference Illustrative Validation & Statistical Matching</span>
                   </h3>
                   <p className="text-xs text-slate-500">
                     Comparing automated APIx daily aggregations against official published DGCA monthly passenger yields
@@ -1136,10 +1002,10 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="bg-emerald-100 text-emerald-800 text-[11px] font-bold font-mono px-2.5 py-1 rounded-lg">
-                    Pearson r = {apixOverview.backtest_correlation || 0.9997} (Target ≥ 0.85: MET)
+                    Pearson r = {apixOverview.backtest_correlation} (Target ≥ 0.85: MET)
                   </span>
                   <span className="bg-blue-100 text-blue-800 text-[11px] font-bold font-mono px-2.5 py-1 rounded-lg">
-                    MAPE = {apixOverview.backtest_mape || 2.05}% (Target ≤ 10%: MET)
+                    MAPE = {apixOverview.backtest_mape}% (Target ≤ 10%: MET)
                   </span>
                 </div>
               </div>
@@ -1150,10 +1016,10 @@ export default function DashboardPage() {
                     <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase text-[10px]">
                       <th className="py-2.5 px-3">Benchmark Period</th>
                       <th className="py-2.5 px-3 text-right">Computed APIx</th>
-                      <th className="py-2.5 px-3 text-right">DGCA Official Yield</th>
+                      <th className="py-2.5 px-3 text-right">Sample Reference Yield</th>
                       <th className="py-2.5 px-3 text-right">Absolute Variance</th>
                       <th className="py-2.5 px-3 text-right">Error Rate (%)</th>
-                      <th className="py-2.5 px-3 text-center">MoSPI Compliance</th>
+                      <th className="py-2.5 px-3 text-center">Demo Comparison</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-mono">
@@ -1164,7 +1030,7 @@ export default function DashboardPage() {
                       <td className="py-2 px-3 text-right text-slate-500">+0.62 pts</td>
                       <td className="py-2 px-3 text-right font-bold text-emerald-600">0.59%</td>
                       <td className="py-2 px-3 text-center">
-                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">APPROVED ✓</span>
+                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">ILLUSTRATIVE</span>
                       </td>
                     </tr>
                     <tr className="hover:bg-slate-50">
@@ -1174,7 +1040,7 @@ export default function DashboardPage() {
                       <td className="py-2 px-3 text-right text-slate-500">+0.55 pts</td>
                       <td className="py-2 px-3 text-right font-bold text-emerald-600">0.51%</td>
                       <td className="py-2 px-3 text-center">
-                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">APPROVED ✓</span>
+                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">ILLUSTRATIVE</span>
                       </td>
                     </tr>
                     <tr className="hover:bg-slate-50">
@@ -1184,15 +1050,15 @@ export default function DashboardPage() {
                       <td className="py-2 px-3 text-right text-slate-500">+0.72 pts</td>
                       <td className="py-2 px-3 text-right font-bold text-emerald-600">0.63%</td>
                       <td className="py-2 px-3 text-center">
-                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">APPROVED ✓</span>
+                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">ILLUSTRATIVE</span>
                       </td>
                     </tr>
                     <tr className="hover:bg-slate-50 bg-blue-50/40">
                       <td className="py-2 px-3 font-sans font-bold text-slate-900">Rolling 30-Day Lookback (Sep 2026)</td>
-                      <td className="py-2 px-3 text-right font-bold text-blue-600">{apixOverview.current_apix || 165.48}</td>
+                      <td className="py-2 px-3 text-right font-bold text-blue-600">{apixOverview.current_apix}</td>
                       <td className="py-2 px-3 text-right text-slate-700">162.80</td>
                       <td className="py-2 px-3 text-right text-slate-500">+2.68 pts</td>
-                      <td className="py-2 px-3 text-right font-bold text-emerald-600">{apixOverview.backtest_mape || 2.05}%</td>
+                      <td className="py-2 px-3 text-right font-bold text-emerald-600">{apixOverview.backtest_mape}%</td>
                       <td className="py-2 px-3 text-center">
                         <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">PASSED &lt; 5% ✓</span>
                       </td>
@@ -1247,10 +1113,10 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <h3 className="text-base font-black text-slate-900">
-                      Autonomous 20-Minute Master Sync Cycle
+                      Sample Dataset Refresh
                     </h3>
                     <p className="text-xs text-slate-500">
-                      MoSPI Production Pipeline: Live Scraping → Class Stratification → ML Outlier Filter → LLM Schema → APIx Recalculation
+                      Demo refresh • Reproducible sample data • No live collection
                     </p>
                   </div>
                 </div>
@@ -1297,7 +1163,7 @@ export default function DashboardPage() {
 
               <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <span className="text-[11px] text-slate-500">
-                  Automatic schedule: Every 20 minutes (1,200 seconds)
+                  Optional demo refresh: every 30 minutes when enabled
                 </span>
 
                 <button
@@ -1329,7 +1195,7 @@ export default function DashboardPage() {
             APIx (UchitFare) • SIH26056 • Ministry of Statistics and Programme Implementation (MoSPI)
           </div>
           <div className="font-mono text-[11px] text-slate-400">
-            Powered by Next.js 16 + FastAPI • Government Production Architecture
+            Built with Next.js • SIH submission prototype
           </div>
         </div>
       </footer>
